@@ -10,7 +10,7 @@
 <body>
   <main class="wrap">
     <h1>Dog Bark Translator 🐶</h1>
-    <p class="sub">Pick a breed, choose some traits, then bark (or type). We’ll “translate.” <em>Entertainment only!</em></p>
+    <p class="sub">Pick a breed, tap a few traits, then bark (or type). We’ll “translate.” <em>Entertainment only!</em></p>
 
     <section class="controls">
       <!-- Breed: dropdown -->
@@ -34,24 +34,8 @@
         <option>Great Dane</option>
       </select>
 
-      <!-- Personality: multi-select + chips -->
-      <label for="traits">Personality (pick a few)</label>
-      <select id="traits" class="select" multiple size="6">
-        <option>goofy</option>
-        <option>food-motivated</option>
-        <option>squirrel-obsessed</option>
-        <option>clingy</option>
-        <option>zoomies</option>
-        <option>water-lover</option>
-        <option>guard dog vibes</option>
-        <option>toy-guarding</option>
-        <option>dramatic talker</option>
-        <option>escape artist</option>
-        <option>nose-driven</option>
-        <option>cuddle bug</option>
-      </select>
-
-      <!-- Quick-add suggestions (chips) -->
+      <!-- Personality: chips only (no dropdown) -->
+      <label>Personality (tap a few)</label>
       <div class="chips" id="traitChips">
         <button data-trait="goofy">goofy</button>
         <button data-trait="food-motivated">food-motivated</button>
@@ -80,11 +64,12 @@
       <div class="result-head"><b>Translation:</b></div>
       <div id="reply" class="bubble">—</div>
 
-      <!-- Speaking animation (GIF) -->
+      <!-- Speaking animation (your requested GIF) -->
       <div id="speakAnim" class="speak-anim" aria-hidden="true">
-        <!-- Replace the src below with your own asset (recommended), e.g., /assets/dog-sunglasses.gif -->
-        <img src="https://media.tenor.com/fWc9O75kN7wAAAAC/dog-sunglasses.gif" alt="Cool dog speaking" />
-        <div class="caption">*cool dog noises*</div>
+        <img
+          src="https://tenor.com/view/dog-phone-hello-yes-this-is-dog-gif-5188579"
+          alt="Dog on phone saying: Hello, yes, this is dog" />
+        <div class="caption">*yes hello this is dog*</div>
       </div>
     </section>
 
@@ -94,30 +79,26 @@
 
   <script>
     const breedEl = document.getElementById('breed');
-    const traitsEl = document.getElementById('traits');
     const heardEl  = document.getElementById('heard');
     const replyEl  = document.getElementById('reply');
     const translateBtn = document.getElementById('translateBtn');
     const fakeRecordBtn = document.getElementById('fakeRecordBtn');
     const banner = document.getElementById('banner');
     const speakAnim = document.getElementById('speakAnim');
+    const chipsEl = document.getElementById('traitChips');
 
-    // Quick-add chips -> toggle selection in <select multiple>
-    document.getElementById('traitChips').addEventListener('click', (e)=>{
+    // Toggle chip selection
+    chipsEl.addEventListener('click', (e)=>{
       if (e.target.tagName !== 'BUTTON') return;
-      const trait = e.target.dataset.trait;
-      for (const opt of traitsEl.options) {
-        if (opt.text === trait) { opt.selected = !opt.selected; break; }
-      }
       e.target.classList.toggle('chip-on');
     });
 
     function getSelectedTraits(){
-      return Array.from(traitsEl.selectedOptions).map(o=>o.value);
+      return Array.from(chipsEl.querySelectorAll('.chip-on')).map(b => b.dataset.trait);
     }
 
     function setDisabled(disabled){
-      [translateBtn, fakeRecordBtn, breedEl, traitsEl, heardEl]
+      [translateBtn, fakeRecordBtn, breedEl, heardEl, ...chipsEl.querySelectorAll('button')]
         .forEach(el => el && (el.disabled = disabled));
     }
 
@@ -139,11 +120,9 @@
       if (!('speechSynthesis' in window)) return;
       const u = new SpeechSynthesisUtterance(text);
       u.rate = 1.05; u.pitch = 1.05;
-
       u.onstart = () => { speakAnim.classList.add('on'); };
       u.onend = () => { speakAnim.classList.remove('on'); };
       u.onerror = () => { speakAnim.classList.remove('on'); };
-
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
     }

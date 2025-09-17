@@ -5,40 +5,90 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Bark Translator — Web 🐶</title>
   <link rel="stylesheet" href="style.css" />
+  <meta name="description" content="A playful dog bark translator tailored to breed and personality.">
 </head>
 <body>
   <main class="wrap">
     <h1>Dog Bark Translator 🐶</h1>
-    <p class="sub">Pick a breed, add a few traits, then bark (or type). We’ll “translate.” <em>Entertainment only!</em></p>
+    <p class="sub">Pick a breed, choose some traits, then bark (or type). We’ll “translate.” <em>Entertainment only!</em></p>
 
     <section class="controls">
-      <label>Dog breed</label>
-      <input id="breed" placeholder="e.g., Labrador Retriever" />
+      <!-- Breed: dropdown -->
+      <label for="breed">Dog breed</label>
+      <select id="breed" class="select">
+        <option value="">— Select a breed —</option>
+        <option>Labrador Retriever</option>
+        <option>Golden Retriever</option>
+        <option>German Shepherd</option>
+        <option>French Bulldog</option>
+        <option>Beagle</option>
+        <option>Poodle</option>
+        <option>Husky</option>
+        <option>Border Collie</option>
+        <option>Corgi</option>
+        <option>Dachshund</option>
+        <option>Shiba</option>
+        <option>Australian Shepherd</option>
+        <option>Boxer</option>
+        <option>Rottweiler</option>
+        <option>Great Dane</option>
+      </select>
 
-      <label>Personality tags (comma separated)</label>
-      <input id="traits" placeholder="e.g., goofy, food-motivated, squirrel-obsessed" />
+      <!-- Personality: multi-select + chips -->
+      <label for="traits">Personality (pick a few)</label>
+      <select id="traits" class="select" multiple size="6">
+        <option>goofy</option>
+        <option>food-motivated</option>
+        <option>squirrel-obsessed</option>
+        <option>clingy</option>
+        <option>zoomies</option>
+        <option>water-lover</option>
+        <option>guard dog vibes</option>
+        <option>toy-guarding</option>
+        <option>dramatic talker</option>
+        <option>escape artist</option>
+        <option>nose-driven</option>
+        <option>cuddle bug</option>
+      </select>
 
-      <label>What we heard</label>
+      <!-- Quick-add suggestions (chips) -->
+      <div class="chips" id="traitChips">
+        <button data-trait="goofy">goofy</button>
+        <button data-trait="food-motivated">food-motivated</button>
+        <button data-trait="squirrel-obsessed">squirrel-obsessed</button>
+        <button data-trait="clingy">clingy</button>
+        <button data-trait="zoomies">zoomies</button>
+        <button data-trait="water-lover">water-lover</button>
+        <button data-trait="guard dog vibes">guard dog vibes</button>
+        <button data-trait="dramatic talker">dramatic talker</button>
+        <button data-trait="nose-driven">nose-driven</button>
+        <button data-trait="cuddle bug">cuddle bug</button>
+      </div>
+
+      <!-- Heard -->
+      <label for="heard">What we heard</label>
       <input id="heard" placeholder='Type a "woof"… or click 🎙️ Record' />
 
+      <!-- Actions: Record (left) | Translate (right) -->
       <div class="actions">
-        <button id="translateBtn">Translate</button>
-        <button id="randomizeBtn">🎲 Surprise me</button>
-        <button id="fakeRecordBtn" class="ghost">🎙️ Record Bark</button>
+        <button id="fakeRecordBtn" class="btn btn-record">🎙️ Record Bark</button>
+        <button id="translateBtn" class="btn btn-primary">Translate</button>
       </div>
     </section>
 
     <section class="result">
-      <div><b>Translation:</b></div>
+      <div class="result-head"><b>Translation:</b></div>
       <div id="reply" class="bubble">—</div>
-      <div class="row">
-        <button id="speakBtn">🔊 Speak</button>
-        <button id="copyBtn">📋 Copy</button>
+
+      <!-- Speaking animation (GIF) -->
+      <div id="speakAnim" class="speak-anim" aria-hidden="true">
+        <!-- Replace the src below with your own asset (recommended), e.g., /assets/dog-sunglasses.gif -->
+        <img src="https://media.tenor.com/fWc9O75kN7wAAAAC/dog-sunglasses.gif" alt="Cool dog speaking" />
+        <div class="caption">*cool dog noises*</div>
       </div>
     </section>
 
     <div id="banner" class="banner" style="display:none;"></div>
-
     <p class="small">No health or training advice. Just jokes.</p>
   </main>
 
@@ -48,14 +98,26 @@
     const heardEl  = document.getElementById('heard');
     const replyEl  = document.getElementById('reply');
     const translateBtn = document.getElementById('translateBtn');
-    const randomizeBtn = document.getElementById('randomizeBtn');
     const fakeRecordBtn = document.getElementById('fakeRecordBtn');
-    const speakBtn = document.getElementById('speakBtn');
-    const copyBtn = document.getElementById('copyBtn');
     const banner = document.getElementById('banner');
+    const speakAnim = document.getElementById('speakAnim');
+
+    // Quick-add chips -> toggle selection in <select multiple>
+    document.getElementById('traitChips').addEventListener('click', (e)=>{
+      if (e.target.tagName !== 'BUTTON') return;
+      const trait = e.target.dataset.trait;
+      for (const opt of traitsEl.options) {
+        if (opt.text === trait) { opt.selected = !opt.selected; break; }
+      }
+      e.target.classList.toggle('chip-on');
+    });
+
+    function getSelectedTraits(){
+      return Array.from(traitsEl.selectedOptions).map(o=>o.value);
+    }
 
     function setDisabled(disabled){
-      [translateBtn, randomizeBtn, fakeRecordBtn, breedEl, traitsEl, heardEl]
+      [translateBtn, fakeRecordBtn, breedEl, traitsEl, heardEl]
         .forEach(el => el && (el.disabled = disabled));
     }
 
@@ -72,20 +134,35 @@
       }
     }
 
+    // Auto-speak helper (shows/hides GIF while speaking)
+    function speak(text){
+      if (!('speechSynthesis' in window)) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 1.05; u.pitch = 1.05;
+
+      u.onstart = () => { speakAnim.classList.add('on'); };
+      u.onend = () => { speakAnim.classList.remove('on'); };
+      u.onerror = () => { speakAnim.classList.remove('on'); };
+
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    }
+
     const FAKE_BARKS = ['woof!', 'woof woof!', 'arf arf!', 'bork bork!', 'awooo~', '*sniff sniff* woof!'];
 
-    async function doTranslate({ random = false } = {}) {
+    async function doTranslate() {
       const heard = heardEl.value.trim();
-      const breed = breedEl.value.trim();
-      const traits = traitsEl.value.trim();
+      const breed = (breedEl.value || '').trim();
+      const traits = getSelectedTraits().join(', ');
 
+      // tiny delay so "thinking…" is visible
       const delay = 300 + Math.random()*400;
       await new Promise(r => setTimeout(r, delay));
 
       const res = await fetch('/api/translate', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ heard, breed, traits, random })
+        body: JSON.stringify({ heard, breed, traits })
       });
 
       if (res.status === 429) {
@@ -94,22 +171,26 @@
         banner.style.display = 'block';
         banner.textContent = msg;
         await typeWriter(replyEl, msg, 35);
+        speak(msg);
         return;
       } else { banner.style.display = 'none'; }
 
       const data = await res.json();
       const line = data.reply || '(*head tilt*) Try another bark.';
       await typeWriter(replyEl, line, 40);
+      speak(line); // auto-speak after typing
       window.lastReply = line;
     }
 
-    async function translate(opts){
+    async function translate(){
       try {
         setDisabled(true);
         setThinking(true);
-        await doTranslate(opts);
+        await doTranslate();
       } catch (e) {
-        replyEl.textContent = 'Network squirrels chewed the cable. Try again.';
+        const msg = 'Network squirrels chewed the cable. Try again.';
+        replyEl.textContent = msg;
+        speak(msg);
       } finally {
         setThinking(false);
         setDisabled(false);
@@ -117,8 +198,8 @@
     }
 
     translateBtn.onclick = () => translate();
-    randomizeBtn.onclick = () => translate({ random: true });
 
+    // Fake Record flow
     fakeRecordBtn.addEventListener('click', async () => {
       fakeRecordBtn.classList.add('recording');
       setDisabled(true);
@@ -126,7 +207,6 @@
 
       const recordMs = 1600 + Math.random()*600;
       await new Promise(r => setTimeout(r, recordMs));
-
       heardEl.value = FAKE_BARKS[Math.floor(Math.random()*FAKE_BARKS.length)];
 
       setThinking(true);
@@ -136,20 +216,6 @@
         fakeRecordBtn.classList.remove('recording');
       }, thinkMs);
     });
-
-    speakBtn.onclick = () => {
-      const text = replyEl.textContent;
-      if (!('speechSynthesis' in window)) return;
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = 1.05; u.pitch = 1.05;
-      speechSynthesis.cancel(); speechSynthesis.speak(u);
-    };
-
-    copyBtn.onclick = async () => {
-      try { await navigator.clipboard.writeText(replyEl.textContent);
-        copyBtn.textContent = '✅ Copied'; setTimeout(()=>copyBtn.textContent='📋 Copy', 1200);
-      } catch {}
-    };
   </script>
 </body>
 </html>

@@ -4,18 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Bark Translator — Web 🐶</title>
+  <meta name="description" content="A playful dog bark translator tailored to breed, traits, and your Woof-Meter." />
   <link rel="stylesheet" href="style.css" />
-  <meta name="description" content="A playful dog bark translator tailored to breed and personality.">
 </head>
 <body>
   <main class="wrap">
     <h1>Dog Bark Translator 🐶</h1>
-    <p class="sub">Pick a breed, tap a few traits, then bark (or type). We’ll “translate.” <em>Entertainment only!</em></p>
+    <p class="sub">Pick a breed, tap a few traits, dial in the Woof-Meter, then translate. <em>Entertainment only!</em></p>
 
-    <section class="controls">
-      <!-- Breed: dropdown -->
+    <section class="controls" aria-label="Inputs">
+      <!-- Breed -->
       <label for="breed">Dog breed</label>
-      <select id="breed" class="select">
+      <select id="breed" class="select" aria-label="Dog breed">
         <option value="">— Select a breed —</option>
         <option>Labrador Retriever</option>
         <option>Golden Retriever</option>
@@ -34,9 +34,9 @@
         <option>Great Dane</option>
       </select>
 
-      <!-- Personality: chips only (no dropdown) -->
+      <!-- Traits (chips only) -->
       <label>Personality (tap a few)</label>
-      <div class="chips" id="traitChips">
+      <div class="chips" id="traitChips" role="group" aria-label="Personality traits">
         <button data-trait="goofy">goofy</button>
         <button data-trait="food-motivated">food-motivated</button>
         <button data-trait="squirrel-obsessed">squirrel-obsessed</button>
@@ -49,26 +49,86 @@
         <button data-trait="cuddle bug">cuddle bug</button>
       </div>
 
-      <!-- Heard -->
-      <label for="heard">What we heard</label>
-      <input id="heard" placeholder='Type a "woof"… or click 🎙️ Record' />
+      <!-- Woof-Meter -->
+      <div class="meter">
+        <div class="meter-row" role="group" aria-label="Woof count">
+          <div class="meter-label">Count</div>
+          <div class="seg" id="countSeg">
+            <button data-val="one_woof" aria-pressed="false">One woof</button>
+            <button data-val="two_woofs" aria-pressed="true" class="on">Two woofs</button>
+            <button data-val="pack_chorus" aria-pressed="false">Pack chorus</button>
+          </div>
+          <small class="hint">How many borks were aired.</small>
+        </div>
 
-      <!-- Actions: Record (left) | Translate (right) -->
+        <div class="meter-row" role="group" aria-label="Pitch">
+          <div class="meter-label">Pitch</div>
+          <div class="seg" id="pitchSeg">
+            <button data-val="squeaky">Squeaky 🐭</button>
+            <button data-val="middle" class="on">Middle 🎺</button>
+            <button data-val="thunder">Thunder 💥</button>
+          </div>
+          <small class="hint">From tiny squeak to subwoofer thunder.</small>
+        </div>
+
+        <div class="meter-row" role="group" aria-label="Urgency">
+          <div class="meter-label">Urgency</div>
+          <div class="seg" id="urgencySeg">
+            <button data-val="casual_sniff">Casual sniff</button>
+            <button data-val="snack_request" class="on">Snack request</button>
+            <button data-val="snack_emergency">Snack emergency</button>
+          </div>
+          <small class="hint">Snack escalation protocol.</small>
+        </div>
+
+        <div class="meter-row" role="group" aria-label="Mood">
+          <div class="meter-label">Mood</div>
+          <div class="seg" id="moodSeg">
+            <button data-val="chill" class="on">Chill</button>
+            <button data-val="alert">Alert</button>
+            <button data-val="drama_queen">Drama queen</button>
+          </div>
+          <small class="hint">Overall bark vibe.</small>
+        </div>
+
+        <div class="meter-row" role="group" aria-label="Squirrel probability">
+          <div class="meter-label">Squirrel %</div>
+          <div class="seg" id="squirrelSeg">
+            <button data-val="0">0%</button>
+            <button data-val="50" class="on">50%</button>
+            <button data-val="100">100%</button>
+          </div>
+          <small class="hint">Scientifically dubious, emotionally accurate.</small>
+        </div>
+
+        <div class="meter-row" role="group" aria-label="Zoomies">
+          <div class="meter-label">Zoomies</div>
+          <div class="zoom">
+            <input id="zoomies" type="range" min="0" max="10" value="5" step="1" />
+            <div id="zoomLabel" class="zoom-label">5 · Wigglebutt</div>
+          </div>
+          <small class="hint">0–2: Couch potato · 3–6: Wigglebutt · 7–10: Tornado</small>
+        </div>
+
+        <div class="meter-actions">
+          <button id="randomizeWoof" class="btn ghost" aria-label="Randomize Woof-Meter">🎲 Randomize woof</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
       <div class="actions">
-        <button id="fakeRecordBtn" class="btn btn-record">🎙️ Record Bark</button>
+        <div></div>
         <button id="translateBtn" class="btn btn-primary">Translate</button>
       </div>
     </section>
 
-    <section class="result">
+    <section class="result" aria-live="polite">
       <div class="result-head"><b>Translation:</b></div>
       <div id="reply" class="bubble">—</div>
 
-      <!-- Speaking animation (your requested GIF) -->
+      <!-- Speaking animation (local asset recommended) -->
       <div id="speakAnim" class="speak-anim" aria-hidden="true">
-        <img
-          src="/assets/dog-phone.gif"
-          alt="Dog on phone saying: Hello, yes, this is dog" />
+        <img src="/assets/dog-phone.gif" alt="Dog on phone: 'Hello, yes, this is dog'" />
         <div class="caption">*yes hello this is dog*</div>
       </div>
     </section>
@@ -78,35 +138,60 @@
   </main>
 
   <script>
+    // --- Elements ---
     const breedEl = document.getElementById('breed');
-    const heardEl  = document.getElementById('heard');
-    const replyEl  = document.getElementById('reply');
-    const translateBtn = document.getElementById('translateBtn');
-    const fakeRecordBtn = document.getElementById('fakeRecordBtn');
-    const banner = document.getElementById('banner');
-    const speakAnim = document.getElementById('speakAnim');
     const chipsEl = document.getElementById('traitChips');
+    const replyEl = document.getElementById('reply');
+    const banner = document.getElementById('banner');
+    const translateBtn = document.getElementById('translateBtn');
+    const speakAnim = document.getElementById('speakAnim');
+    const zoomiesEl = document.getElementById('zoomies');
+    const zoomLabelEl = document.getElementById('zoomLabel');
 
-    // Toggle chip selection
+    // segmented groups
+    const segGroups = {
+      count: document.getElementById('countSeg'),
+      pitch: document.getElementById('pitchSeg'),
+      urgency: document.getElementById('urgencySeg'),
+      mood: document.getElementById('moodSeg'),
+      squirrel: document.getElementById('squirrelSeg'),
+    };
+
+    // Trait chips toggle
     chipsEl.addEventListener('click', (e)=>{
       if (e.target.tagName !== 'BUTTON') return;
       e.target.classList.toggle('chip-on');
     });
+    const getSelectedTraits = () =>
+      Array.from(chipsEl.querySelectorAll('.chip-on')).map(b => b.dataset.trait);
 
-    function getSelectedTraits(){
-      return Array.from(chipsEl.querySelectorAll('.chip-on')).map(b => b.dataset.trait);
+    // Segmented controls (one active)
+    for (const key in segGroups) {
+      segGroups[key].addEventListener('click', e => {
+        if (e.target.tagName !== 'BUTTON') return;
+        segGroups[key].querySelectorAll('button').forEach(b => { b.classList.remove('on'); b.setAttribute('aria-pressed','false'); });
+        e.target.classList.add('on'); e.target.setAttribute('aria-pressed','true');
+      });
     }
 
+    // Zoomies live label
+    function zoomLabel(v){
+      const n = Number(v);
+      const bucket = n <= 2 ? 'Couch potato' : n <= 6 ? 'Wigglebutt' : 'Tornado';
+      zoomLabelEl.textContent = `${n} · ${bucket}`;
+    }
+    zoomiesEl.addEventListener('input', e => zoomLabel(e.target.value));
+    zoomLabel(zoomiesEl.value);
+
+    // Helpers
     function setDisabled(disabled){
-      [translateBtn, fakeRecordBtn, breedEl, heardEl, ...chipsEl.querySelectorAll('button')]
-        .forEach(el => el && (el.disabled = disabled));
+      const allButtons = Array.from(document.querySelectorAll('button, select, input[type="range"]'));
+      allButtons.forEach(el => el.disabled = disabled);
     }
-
     function setThinking(on){
       if (on) { replyEl.classList.add('thinking'); replyEl.textContent = 'Translating…'; }
       else { replyEl.classList.remove('thinking'); }
     }
-
     async function typeWriter(el, text, speed = 40) {
       el.textContent = "";
       for (let i = 0; i < text.length; i++) {
@@ -114,34 +199,52 @@
         await new Promise(r => setTimeout(r, speed));
       }
     }
-
-    // Auto-speak helper (shows/hides GIF while speaking)
+    // Auto-speak + GIF with 2.5s fallback visibility
     function speak(text){
+      const showAnim = () => speakAnim.classList.add('on');
+      const hideAnim = () => speakAnim.classList.remove('on');
+      showAnim();
+      const minTimer = setTimeout(hideAnim, 2500);
       if (!('speechSynthesis' in window)) return;
       const u = new SpeechSynthesisUtterance(text);
       u.rate = 1.05; u.pitch = 1.05;
-      u.onstart = () => { speakAnim.classList.add('on'); };
-      u.onend = () => { speakAnim.classList.remove('on'); };
-      u.onerror = () => { speakAnim.classList.remove('on'); };
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
+      u.onend = () => { clearTimeout(minTimer); hideAnim(); };
+      u.onerror = () => { clearTimeout(minTimer); hideAnim(); };
+      try { speechSynthesis.cancel(); speechSynthesis.speak(u); } catch { /* rely on fallback */ }
     }
 
-    const FAKE_BARKS = ['woof!', 'woof woof!', 'arf arf!', 'bork bork!', 'awooo~', '*sniff sniff* woof!'];
+    function readSeg(groupEl, fallback){
+      const on = groupEl.querySelector('.on');
+      return on ? on.dataset.val : fallback;
+    }
+
+    // Build payload
+    function buildPayload(){
+      return {
+        breed: (breedEl.value || '').trim(),
+        traits: getSelectedTraits().join(', '),
+        woofMeter: {
+          count: readSeg(segGroups.count, 'two_woofs'),
+          pitch: readSeg(segGroups.pitch, 'middle'),
+          urgency: readSeg(segGroups.urgency, 'snack_request'),
+          mood: readSeg(segGroups.mood, 'chill'),
+          squirrel: readSeg(segGroups.squirrel, '50'),
+          zoomies: Number(zoomiesEl.value || 5)
+        }
+      };
+    }
 
     async function doTranslate() {
-      const heard = heardEl.value.trim();
-      const breed = (breedEl.value || '').trim();
-      const traits = getSelectedTraits().join(', ');
+      const payload = buildPayload();
 
-      // tiny delay so "thinking…" is visible
-      const delay = 300 + Math.random()*400;
-      await new Promise(r => setTimeout(r, delay));
+      // tiny delay so thinking is visible
+      await new Promise(r => setTimeout(r, 300 + Math.random()*400));
 
       const res = await fetch('/api/translate', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ heard, breed, traits })
+        cache: 'no-store',
+        body: JSON.stringify(payload)
       });
 
       if (res.status === 429) {
@@ -157,45 +260,32 @@
       const data = await res.json();
       const line = data.reply || '(*head tilt*) Try another bark.';
       await typeWriter(replyEl, line, 40);
-      speak(line); // auto-speak after typing
-      window.lastReply = line;
+      speak(line);
     }
 
     async function translate(){
-      try {
-        setDisabled(true);
-        setThinking(true);
-        await doTranslate();
-      } catch (e) {
+      try { setDisabled(true); setThinking(true); await doTranslate(); }
+      catch (e) {
         const msg = 'Network squirrels chewed the cable. Try again.';
-        replyEl.textContent = msg;
-        speak(msg);
-      } finally {
-        setThinking(false);
-        setDisabled(false);
-      }
+        replyEl.textContent = msg; speak(msg);
+      } finally { setThinking(false); setDisabled(false); }
     }
 
     translateBtn.onclick = () => translate();
 
-    // Fake Record flow
-    fakeRecordBtn.addEventListener('click', async () => {
-      fakeRecordBtn.classList.add('recording');
-      setDisabled(true);
-      replyEl.textContent = 'Listening… *big ear tilt*';
-
-      const recordMs = 1600 + Math.random()*600;
-      await new Promise(r => setTimeout(r, recordMs));
-      heardEl.value = FAKE_BARKS[Math.floor(Math.random()*FAKE_BARKS.length)];
-
-      setThinking(true);
-      const thinkMs = 900 + Math.random()*600;
-      setTimeout(async () => {
-        await translate();
-        fakeRecordBtn.classList.remove('recording');
-      }, thinkMs);
-    });
+    // Randomize Woof-Meter (no API call)
+    document.getElementById('randomizeWoof').onclick = ()=>{
+      // segmented groups
+      for (const key in segGroups) {
+        const btns = Array.from(segGroups[key].querySelectorAll('button'));
+        const pick = btns[Math.floor(Math.random()*btns.length)];
+        btns.forEach(b => { b.classList.remove('on'); b.setAttribute('aria-pressed','false'); });
+        pick.classList.add('on'); pick.setAttribute('aria-pressed','true');
+      }
+      // zoomies
+      const z = Math.floor(Math.random()*11);
+      zoomiesEl.value = z; zoomLabel(z);
+    };
   </script>
 </body>
 </html>
-

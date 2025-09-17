@@ -36,14 +36,13 @@ h1{ margin:0 0 6px; font-size:32px; }
   border-color: var(--chewy);
   box-shadow: 0 0 0 3px rgba(30,144,255,.15);
 }
-.select[multiple]{ height:auto; min-height:140px; }
 
 /* Chips */
 .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
 .chips button{
   padding:8px 12px; border-radius:999px; border:1px solid #d0d7de; background:#fff;
   color:#222; cursor:pointer; font-size:13px;
-  transition:background .15s, transform .06s ease;
+  transition:background .15s, transform .06s ease, box-shadow .15s ease;
 }
 .chips button:active{ transform: translateY(1px) scale(.99);}
 .chips button.chip-on{
@@ -103,7 +102,7 @@ button:disabled{ opacity:.65; cursor:not-allowed; }
 }
 .speak-anim.on{ display:flex; }
 .speak-anim img{
-  width:72px; height:72px; object-fit:cover; border-radius:10px;
+  width:80px; height:80px; object-fit:cover; border-radius:10px;
   box-shadow: 0 6px 14px rgba(0,0,0,.12);
 }
 .speak-anim .caption{ color:#7c3aed; font-weight:600; }

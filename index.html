@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bark Translator — Web 🐶</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <h1>Dog Bark Translator 🐶</h1>
+    <p class="sub">Pick a breed, add a few traits, then bark (or type). We’ll “translate.” <em>Entertainment only!</em></p>
+
+    <section class="controls">
+      <label>Dog breed</label>
+      <input id="breed" placeholder="e.g., Labrador Retriever" />
+
+      <label>Personality tags (comma separated)</label>
+      <input id="traits" placeholder="e.g., goofy, food-motivated, squirrel-obsessed" />
+
+      <label>What we heard</label>
+      <input id="heard" placeholder='Type a "woof"… or click 🎙️ Record' />
+
+      <div class="actions">
+        <button id="translateBtn">Translate</button>
+        <button id="randomizeBtn">🎲 Surprise me</button>
+        <button id="fakeRecordBtn" class="ghost">🎙️ Record Bark</button>
+      </div>
+    </section>
+
+    <section class="result">
+      <div><b>Translation:</b></div>
+      <div id="reply" class="bubble">—</div>
+      <div class="row">
+        <button id="speakBtn">🔊 Speak</button>
+        <button id="copyBtn">📋 Copy</button>
+      </div>
+    </section>
+
+    <div id="banner" class="banner" style="display:none;"></div>
+
+    <p class="small">No health or training advice. Just jokes.</p>
+  </main>
+
+  <script>
+    const breedEl = document.getElementById('breed');
+    const traitsEl = document.getElementById('traits');
+    const heardEl  = document.getElementById('heard');
+    const replyEl  = document.getElementById('reply');
+    const translateBtn = document.getElementById('translateBtn');
+    const randomizeBtn = document.getElementById('randomizeBtn');
+    const fakeRecordBtn = document.getElementById('fakeRecordBtn');
+    const speakBtn = document.getElementById('speakBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const banner = document.getElementById('banner');
+
+    function setDisabled(disabled){
+      [translateBtn, randomizeBtn, fakeRecordBtn, breedEl, traitsEl, heardEl]
+        .forEach(el => el && (el.disabled = disabled));
+    }
+
+    function setThinking(on){
+      if (on) { replyEl.classList.add('thinking'); replyEl.textContent = 'Translating…'; }
+      else { replyEl.classList.remove('thinking'); }
+    }
+
+    async function typeWriter(el, text, speed = 40) {
+      el.textContent = "";
+      for (let i = 0; i < text.length; i++) {
+        el.textContent += text[i];
+        await new Promise(r => setTimeout(r, speed));
+      }
+    }
+
+    const FAKE_BARKS = ['woof!', 'woof woof!', 'arf arf!', 'bork bork!', 'awooo~', '*sniff sniff* woof!'];
+
+    async function doTranslate({ random = false } = {}) {
+      const heard = heardEl.value.trim();
+      const breed = breedEl.value.trim();
+      const traits = traitsEl.value.trim();
+
+      const delay = 300 + Math.random()*400;
+      await new Promise(r => setTimeout(r, delay));
+
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ heard, breed, traits, random })
+      });
+
+      if (res.status === 429) {
+        const data = await res.json().catch(()=> ({}));
+        const msg = data?.reply || "Too many barks. Try again soon.";
+        banner.style.display = 'block';
+        banner.textContent = msg;
+        await typeWriter(replyEl, msg, 35);
+        return;
+      } else { banner.style.display = 'none'; }
+
+      const data = await res.json();
+      const line = data.reply || '(*head tilt*) Try another bark.';
+      await typeWriter(replyEl, line, 40);
+      window.lastReply = line;
+    }
+
+    async function translate(opts){
+      try {
+        setDisabled(true);
+        setThinking(true);
+        await doTranslate(opts);
+      } catch (e) {
+        replyEl.textContent = 'Network squirrels chewed the cable. Try again.';
+      } finally {
+        setThinking(false);
+        setDisabled(false);
+      }
+    }
+
+    translateBtn.onclick = () => translate();
+    randomizeBtn.onclick = () => translate({ random: true });
+
+    fakeRecordBtn.addEventListener('click', async () => {
+      fakeRecordBtn.classList.add('recording');
+      setDisabled(true);
+      replyEl.textContent = 'Listening… *big ear tilt*';
+
+      const recordMs = 1600 + Math.random()*600;
+      await new Promise(r => setTimeout(r, recordMs));
+
+      heardEl.value = FAKE_BARKS[Math.floor(Math.random()*FAKE_BARKS.length)];
+
+      setThinking(true);
+      const thinkMs = 900 + Math.random()*600;
+      setTimeout(async () => {
+        await translate();
+        fakeRecordBtn.classList.remove('recording');
+      }, thinkMs);
+    });
+
+    speakBtn.onclick = () => {
+      const text = replyEl.textContent;
+      if (!('speechSynthesis' in window)) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 1.05; u.pitch = 1.05;
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    };
+
+    copyBtn.onclick = async () => {
+      try { await navigator.clipboard.writeText(replyEl.textContent);
+        copyBtn.textContent = '✅ Copied'; setTimeout(()=>copyBtn.textContent='📋 Copy', 1200);
+      } catch {}
+    };
+  </script>
+</body>
+</html>

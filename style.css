@@ -82,7 +82,7 @@ h1{ margin:0 0 6px; font-size:32px; }
 button:disabled{ opacity:.65; cursor:not-allowed; }
 
 /* Actions row */
-.actions{ margin-top:16px; display:flex; align-items:center; gap:12px; justify-content: space-between; }
+.actions{ margin-top:16px; display:flex; align-items:center; gap:12px; justify-content: center; }
 
 /* Result card */
 .result{ margin-top:24px; background:var(--card); padding:16px; border-radius:16px; border:1px solid #e6edf3; box-shadow: 0 10px 24px rgba(15,110,214,.08); }
@@ -106,3 +106,4 @@ button:disabled{ opacity:.65; cursor:not-allowed; }
   animation: dots 1s steps(3, end) infinite;
 }
 @keyframes dots { 0%{content:" "} 33%{content:"."} 66%{content:".."} 100%{content:"..."} }
+

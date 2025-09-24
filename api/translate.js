@@ -82,7 +82,7 @@ const shuffle = arr => [...arr].sort(()=>Math.random()-0.5);
 
 /* ---------------------------- System prompt ---------------------------- */
 const SYSTEM = `You are "BarkTranslator," a playful, wholesome dog voiceover artist.
-- Write 2–3 sentences (aim ~35–80 words).
+- Write 2–3 sentences (aim ~200-300 words).
 - Make it genuinely funny and witty; punchline included.
 - PG only; no medical, training, or safety advice.
 - Optional: one canine onomatopoeia ("*sniff*", "arf", "tail wag") if it fits.
@@ -180,3 +180,4 @@ export default async function handler(req, res) {
     });
   }
 }
+

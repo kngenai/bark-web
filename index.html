@@ -139,156 +139,242 @@
     <p class="small">No health or training advice. Just jokes.</p>
   </main>
 
-  <script>
-    // --- Elements ---
-    const breedEl = document.getElementById('breed');
-    const chipsEl = document.getElementById('traitChips');
-    const replyEl = document.getElementById('reply');
-    const banner = document.getElementById('banner');
-    const translateBtn = document.getElementById('translateBtn');
-    const speakAnim = document.getElementById('speakAnim');
-    const zoomiesEl = document.getElementById('zoomies');
-    const zoomLabelEl = document.getElementById('zoomLabel');
+<script>
+  // ==== Config ====
+  const ENABLE_AUDIO = false;                 // hard-disable audio/GIFs
+  const CLIENT_TIMEOUT_MS = 12000;            // abort slow requests
+  const PREFERS_REDUCED =
+    window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches || false;
 
-    // segmented groups
-    const segGroups = {
-      count: document.getElementById('countSeg'),
-      pitch: document.getElementById('pitchSeg'),
-      urgency: document.getElementById('urgencySeg'),
-      mood: document.getElementById('moodSeg'),
-      squirrel: document.getElementById('squirrelSeg'),
-    };
+  // --- Elements ---
+  const breedEl = document.getElementById('breed');
+  const chipsEl = document.getElementById('traitChips');
+  const replyEl = document.getElementById('reply');
+  const banner = document.getElementById('banner');
+  const translateBtn = document.getElementById('translateBtn');
+  const speakAnim = document.getElementById('speakAnim');
+  const zoomiesEl = document.getElementById('zoomies');
+  const zoomLabelEl = document.getElementById('zoomLabel');
 
-    // Trait chips toggle
-    chipsEl.addEventListener('click', (e)=>{
+  // Hide the speaking animation box entirely if audio disabled
+  if (speakAnim && !ENABLE_AUDIO) {
+    speakAnim.style.display = 'none';
+  }
+
+  // segmented groups
+  const segGroups = {
+    count: document.getElementById('countSeg'),
+    pitch: document.getElementById('pitchSeg'),
+    urgency: document.getElementById('urgencySeg'),
+    mood: document.getElementById('moodSeg'),
+    squirrel: document.getElementById('squirrelSeg'),
+  };
+
+  // Trait chips toggle
+  chipsEl.addEventListener('click', (e)=>{
+    if (e.target.tagName !== 'BUTTON') return;
+    e.target.classList.toggle('chip-on');
+  });
+  const getSelectedTraits = () =>
+    Array.from(chipsEl.querySelectorAll('.chip-on')).map(b => b.dataset.trait);
+
+  // Segmented controls (one active)
+  for (const key in segGroups) {
+    segGroups[key].addEventListener('click', e => {
       if (e.target.tagName !== 'BUTTON') return;
-      e.target.classList.toggle('chip-on');
+      segGroups[key].querySelectorAll('button').forEach(b => {
+        b.classList.remove('on');
+        // ARIA: radio semantics for better a11y
+        b.setAttribute('aria-checked','false');
+      });
+      e.target.classList.add('on');
+      e.target.setAttribute('aria-checked','true');
     });
-    const getSelectedTraits = () =>
-      Array.from(chipsEl.querySelectorAll('.chip-on')).map(b => b.dataset.trait);
+  }
 
-    // Segmented controls (one active)
-    for (const key in segGroups) {
-      segGroups[key].addEventListener('click', e => {
-        if (e.target.tagName !== 'BUTTON') return;
-        segGroups[key].querySelectorAll('button').forEach(b => { b.classList.remove('on'); b.setAttribute('aria-pressed','false'); });
-        e.target.classList.add('on'); e.target.setAttribute('aria-pressed','true');
-      });
-    }
+  // Zoomies live label
+  function zoomLabel(v){
+    const n = Number(v);
+    const bucket = n <= 2 ? 'Couch potato' : n <= 6 ? 'Wigglebutt' : 'Tornado';
+    zoomLabelEl.textContent = `${n} · ${bucket}`;
+  }
+  zoomiesEl.addEventListener('input', e => zoomLabel(e.target.value));
+  zoomLabel(zoomiesEl.value);
 
-    // Zoomies live label
-    function zoomLabel(v){
-      const n = Number(v);
-      const bucket = n <= 2 ? 'Couch potato' : n <= 6 ? 'Wigglebutt' : 'Tornado';
-      zoomLabelEl.textContent = `${n} · ${bucket}`;
+  // Helpers
+  function setDisabled(disabled){
+    const allButtons = Array.from(document.querySelectorAll('button, select, input[type="range"]'));
+    allButtons.forEach(el => el.disabled = disabled);
+  }
+  function setThinking(on){
+    if (on) { replyEl.classList.add('thinking'); replyEl.textContent = 'Translating…'; }
+    else { replyEl.classList.remove('thinking'); }
+  }
+  async function typeWriter(el, text, speed = 40) {
+    if (PREFERS_REDUCED) { el.textContent = text; return; }
+    el.textContent = "";
+    for (let i = 0; i < text.length; i++) {
+      el.textContent += text[i];
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise(r => setTimeout(r, speed));
     }
-    zoomiesEl.addEventListener('input', e => zoomLabel(e.target.value));
-    zoomLabel(zoomiesEl.value);
+  }
+  // No-op: audio + GIFs disabled
+  function speak(_text){ /* intentionally disabled */ }
 
-    // Helpers
-    function setDisabled(disabled){
-      const allButtons = Array.from(document.querySelectorAll('button, select, input[type="range"]'));
-      allButtons.forEach(el => el.disabled = disabled);
-    }
-    function setThinking(on){
-      if (on) { replyEl.classList.add('thinking'); replyEl.textContent = 'Translating…'; }
-      else { replyEl.classList.remove('thinking'); }
-    }
-    async function typeWriter(el, text, speed = 40) {
-      el.textContent = "";
-      for (let i = 0; i < text.length; i++) {
-        el.textContent += text[i];
-        await new Promise(r => setTimeout(r, speed));
+  function readSeg(groupEl, fallback){
+    const on = groupEl.querySelector('.on');
+    return on ? (on.dataset.val ?? fallback) : fallback;
+  }
+
+  // Build payload
+  function buildPayload(){
+    return {
+      breed: (breedEl.value || '').trim(),
+      traits: getSelectedTraits().join(', '),
+      woofMeter: {
+        count: readSeg(segGroups.count, 'two_woofs'),
+        pitch: readSeg(segGroups.pitch, 'middle'),
+        urgency: readSeg(segGroups.urgency, 'snack_request'),
+        mood: readSeg(segGroups.mood, 'chill'),
+        squirrel: readSeg(segGroups.squirrel, '50'),
+        zoomies: Number(zoomiesEl.value || 5)
       }
-    }
-    // Auto-speak + GIF with 2.5s fallback visibility
-    function speak(text){
-      const showAnim = () => speakAnim.classList.add('on');
-      const hideAnim = () => speakAnim.classList.remove('on');
-      showAnim();
-      const minTimer = setTimeout(hideAnim, 2500);
-      if (!('speechSynthesis' in window)) return;
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = 1.05; u.pitch = 1.05;
-      u.onend = () => { clearTimeout(minTimer); hideAnim(); };
-      u.onerror = () => { clearTimeout(minTimer); hideAnim(); };
-      try { speechSynthesis.cancel(); speechSynthesis.speak(u); } catch { /* rely on fallback */ }
-    }
-
-    function readSeg(groupEl, fallback){
-      const on = groupEl.querySelector('.on');
-      return on ? on.dataset.val : fallback;
-    }
-
-    // Build payload
-    function buildPayload(){
-      return {
-        breed: (breedEl.value || '').trim(),
-        traits: getSelectedTraits().join(', '),
-        woofMeter: {
-          count: readSeg(segGroups.count, 'two_woofs'),
-          pitch: readSeg(segGroups.pitch, 'middle'),
-          urgency: readSeg(segGroups.urgency, 'snack_request'),
-          mood: readSeg(segGroups.mood, 'chill'),
-          squirrel: readSeg(segGroups.squirrel, '50'),
-          zoomies: Number(zoomiesEl.value || 5)
-        }
-      };
-    }
-
-    async function doTranslate() {
-      const payload = buildPayload();
-
-      // tiny delay so thinking is visible
-      await new Promise(r => setTimeout(r, 300 + Math.random()*400));
-
-      const res = await fetch('/api/translate', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        cache: 'no-store',
-        body: JSON.stringify(payload)
-      });
-
-      if (res.status === 429) {
-        const data = await res.json().catch(()=> ({}));
-        const msg = data?.reply || "Too many barks. Try again soon.";
-        banner.style.display = 'block';
-        banner.textContent = msg;
-        await typeWriter(replyEl, msg, 35);
-        speak(msg);
-        return;
-      } else { banner.style.display = 'none'; }
-
-      const data = await res.json();
-      const line = data.reply || '(*head tilt*) Try another bark.';
-      await typeWriter(replyEl, line, 40);
-      speak(line);
-    }
-
-    async function translate(){
-      try { setDisabled(true); setThinking(true); await doTranslate(); }
-      catch (e) {
-        const msg = 'Network squirrels chewed the cable. Try again.';
-        replyEl.textContent = msg; speak(msg);
-      } finally { setThinking(false); setDisabled(false); }
-    }
-
-    translateBtn.onclick = () => translate();
-
-    // Randomize Woof-Meter (no API call)
-    document.getElementById('randomizeWoof').onclick = ()=>{
-      // segmented groups
-      for (const key in segGroups) {
-        const btns = Array.from(segGroups[key].querySelectorAll('button'));
-        const pick = btns[Math.floor(Math.random()*btns.length)];
-        btns.forEach(b => { b.classList.remove('on'); b.setAttribute('aria-pressed','false'); });
-        pick.classList.add('on'); pick.setAttribute('aria-pressed','true');
-      }
-      // zoomies
-      const z = Math.floor(Math.random()*11);
-      zoomiesEl.value = z; zoomLabel(z);
     };
-  </script>
+  }
+
+  // Local persistence (nice touch)
+  const STORAGE_KEY = 'bark-translator-v1';
+  function saveState(){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(buildPayload())); } catch {}
+  }
+  function loadState(){
+    try {
+      const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (!state || typeof state !== 'object') return;
+      if (state.breed) breedEl.value = state.breed;
+      (state.traits || '').split(',').map(s=>s.trim()).filter(Boolean).forEach(tr => {
+        const btn = chipsEl.querySelector(`[data-trait="${CSS.escape(tr)}"]`);
+        if (btn) btn.classList.add('chip-on');
+      });
+      const map = [
+        ['count','countSeg','two_woofs'],
+        ['pitch','pitchSeg','middle'],
+        ['urgency','urgencySeg','snack_request'],
+        ['mood','moodSeg','chill'],
+        ['squirrel','squirrelSeg','50'],
+      ];
+      map.forEach(([k, id, fb])=>{
+        const seg = document.getElementById(id);
+        const val = state.woofMeter?.[k] ?? fb;
+        const btn = seg?.querySelector(`button[data-val="${val}"]`);
+        if (btn) btn.click();
+      });
+      const z = Number(state.woofMeter?.zoomies ?? 5);
+      zoomiesEl.value = z; zoomLabel(z);
+    } catch {}
+  }
+  breedEl.addEventListener('change', saveState);
+  chipsEl.addEventListener('click', saveState);
+  Object.values(segGroups).forEach(el => el.addEventListener('click', saveState));
+  zoomiesEl.addEventListener('input', saveState);
+  loadState();
+
+  // Fetch with cache-busting + timeout + proper error handling
+  async function doTranslate() {
+    const payload = buildPayload();
+
+    // tiny delay so thinking is visible
+    await new Promise(r => setTimeout(r, 300 + Math.random()*400));
+
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), CLIENT_TIMEOUT_MS);
+
+    const res = await fetch(`/api/translate?ts=${Date.now()}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      cache: 'no-store',                // hint to bypass caches
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    }).catch((e)=>{ throw e; })
+      .finally(()=> clearTimeout(timer));
+
+    if (res.status === 429) {
+      const data = await res.json().catch(()=> ({}));
+      const msg = data?.reply || "Too many barks. Try again soon.";
+      const seconds = Number(data?.retryAfter || 0);
+
+      banner.style.display = 'block';
+      if (seconds > 0) {
+        let remaining = seconds;
+        banner.textContent = `${msg} (${remaining}s)`;
+        const countdown = setInterval(()=>{
+          remaining--;
+          banner.textContent = `${msg} (${Math.max(remaining,0)}s)`;
+          if (remaining <= 0) clearInterval(countdown);
+        }, 1000);
+      } else {
+        banner.textContent = msg;
+      }
+
+      await typeWriter(replyEl, msg, 35);
+      speak(msg); // no-op
+      return;
+    } else {
+      banner.style.display = 'none';
+    }
+
+    if (!res.ok) {
+      const data = await res.json().catch(()=> ({}));
+      const msg = data?.reply || 'Server had a squirrel moment. Try again.';
+      await typeWriter(replyEl, msg, 35);
+      speak(msg); // no-op
+      return;
+    }
+
+    const data = await res.json();
+    const line = (data && data.reply) ? data.reply : '(*head tilt*) Try another bark.';
+    await typeWriter(replyEl, line, 40);
+    speak(line); // no-op
+  }
+
+  async function translate(){
+    try { setDisabled(true); setThinking(true); await doTranslate(); }
+    catch (e) {
+      const msg = (e && e.name === 'AbortError')
+        ? 'The park got too far away (timeout). Try again.'
+        : 'Network squirrels chewed the cable. Try again.';
+      replyEl.textContent = msg; speak(msg);
+      banner.style.display = 'block'; banner.textContent = msg;
+    } finally { setThinking(false); setDisabled(false); }
+  }
+
+  translateBtn.onclick = () => translate();
+
+  // Randomize Woof-Meter (no API call)
+  document.getElementById('randomizeWoof').onclick = ()=>{
+    for (const key in segGroups) {
+      const btns = Array.from(segGroups[key].querySelectorAll('button'));
+      const pick = btns[Math.floor(Math.random()*btns.length)];
+      btns.forEach(b => { b.classList.remove('on'); b.setAttribute('aria-checked','false'); });
+      pick.classList.add('on'); pick.setAttribute('aria-checked','true');
+    }
+    const z = Math.floor(Math.random()*11);
+    zoomiesEl.value = z; zoomLabel(z);
+    saveState();
+  };
+
+  // Keyboard: Enter to submit
+  document.addEventListener('keydown', (e)=>{
+    // avoid triggering while typing in selects/inputs
+    const tag = (document.activeElement?.tagName || '').toLowerCase();
+    if (e.key === 'Enter' && !e.shiftKey && !['input','select','textarea','button'].includes(tag)) {
+      translateBtn.click();
+    }
+  });
+</script>
+
 </body>
 </html>
+
 

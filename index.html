@@ -5,24 +5,39 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Bark Translator — Web 🐶</title>
   <meta name="description" content="A playful dog bark translator tailored to breed, traits, and your Woof-Meter." />
-  <!-- Helps with some CDNs that block hotlinking -->
+  <!-- Helps avoid hotlink blocking referrers -->
   <meta name="referrer" content="no-referrer">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
+  <!-- FUN BACKGROUND LAYER (cartoon dog + bubble) -->
+  <div class="bg-hero">
+    <img src="/assets/bg-dog-cartoon.png"
+         onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Dog_cartoon.svg/512px-Dog_cartoon.svg.png';"
+         alt="Cartoon dog" class="bg-dog" />
+    <div id="bgBubble" class="bg-bubble">Woof means hello!</div>
+  </div>
+
   <main class="wrap">
     <h1>Dog Bark Translator 🐶</h1>
     <p class="sub">Pick a breed, tap a few traits, dial in the Woof-Meter, then translate. <em>Entertainment only!</em></p>
 
-    <!-- Hero dog + speech bubble -->
+    <!-- Hero (small mascot + bubble under title) -->
     <section class="hero">
       <div class="dog">
-        <img id="heroDog" alt="Happy dog mascot" />
+        <img id="heroDog" alt="Happy dog mascot"
+             src="/assets/dog-hero.png"
+             onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Husky_Walking.jpg/320px-Husky_Walking.jpg';" />
       </div>
       <div class="bubble-callout">
-        <span id="heroBubble">Woof! I speak human now.</span>
+        <span id="heroBubble">Translator online. Begin borks.</span>
       </div>
     </section>
+
+    <!-- Describe the Bark signposting -->
+    <h2 class="section-title">Describe the Bark 🎤</h2>
+    <p class="section-sub">Use the Woof-Meter to set how the bark sounds — count, pitch, urgency, mood, squirrel %, and zoomies.</p>
 
     <section class="controls" aria-label="Inputs">
       <!-- Breed -->
@@ -60,9 +75,6 @@
         <button data-trait="nose-driven">nose-driven</button>
         <button data-trait="cuddle bug">cuddle bug</button>
       </div>
-
-      <h2 class="section-title">Describe the Bark 🎤</h2>
-<p class="section-sub">Use the Woof-Meter below to tell us how your dog’s bark sounds — the count, pitch, urgency, mood, squirrel %, and zoomie level.</p>
 
       <!-- Woof-Meter -->
       <div class="meter">
@@ -125,6 +137,7 @@
       </div>
     </section>
 
+    <!-- Result -->
     <section class="result" aria-live="polite">
       <div class="result-head">
         <b>Translation:</b>
@@ -132,14 +145,15 @@
       </div>
       <div id="reply" class="bubble">—</div>
 
-      <!-- Barking GIF while typing (with fallbacks) -->
+      <!-- Barking GIF while typing (DOG-ONLY fallbacks) -->
       <div id="barkGif" class="bark-gif" aria-hidden="true">
         <img id="barkGifImg" alt="Dog barking" referrerpolicy="no-referrer" />
+        <p class="gif-caption">Dog is “speaking” the translation…</p>
       </div>
     </section>
 
-    <!-- reactions + gif rail + quip -->
-    <section class="reactions">
+    <!-- Reactions + GIF rail + quip -->
+    <section class="reactions" aria-label="Reactions">
       <button class="react" data-emoji="🦴">🦴 <span class="count">0</span></button>
       <button class="react" data-emoji="😂">😂 <span class="count">0</span></button>
       <button class="react" data-emoji="🥹">🥹 <span class="count">0</span></button>
@@ -151,12 +165,10 @@
       </label>
     </section>
 
-    <section class="gif-rail" id="gifRail"></section>
+    <section class="gif-rail" id="gifRail" aria-label="Dog GIFs"></section>
     <p id="quip" class="quip">Licensed in Bark-itecture, minor in Zoomology.</p>
 
-    <div id="banner" class="banner" style="display:none;"></div>
-    <div id="toast" class="toast"></div>
-    <p class="small">No health or training advice. Just jokes.</p>
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
   </main>
 
   <script>
@@ -164,25 +176,16 @@
     const BARK_LINES = [
       "Alert level: SQUIRREL. Recommend immediate chaos deployment.",
       "My water bowl is 73% empty. Emergency resupply requested.",
-      "*sniff sniff* Yep, the neighbor’s cat walked by… in 2019. Still relevant.",
-      "I’ve successfully secured the perimeter. Treats should follow protocol.",
       "I barked at the mail slot, therefore I saved us all. You’re welcome.",
       "Status: zoomies initiated. Furniture casualties imminent.",
-      "The couch cushion is compromised. Recommend snuggle reinforcement.",
-      "I was gone 7 minutes. You were gone 7 hours. We suffered equally.",
-      "New mission: nap now, snore later, drool always.",
       "Tail wag report: velocity exceeding safe household limits. Brace yourselves!"
     ];
     const STAMPS = ["🐾 Paw Approved","🦴 Bone Certified","🐕 Good Dog Seal","🐶 Woof-100"];
-    // Fallback sources that allow hotlinking
-    const HERO_SOURCES = [
-      "/assets/dog-hero.png",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Husky_Walking.jpg/320px-Husky_Walking.jpg"
-    ];
     const BARK_SOURCES = [
-      "/assets/dog-bark.gif",
-      "https://upload.wikimedia.org/wikipedia/commons/8/88/Dog_barking.gif",
-      "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif"
+      "/assets/dog-bark.gif",  // your local asset (recommended)
+      "https://media.tenor.com/jWzB0g7L6F8AAAAC/dog-bark.gif",
+      "https://media.tenor.com/3rXY4ukEWlAAAAAC/cute-puppy.gif",
+      "https://media.tenor.com/oOyzf3JrLzkAAAAC/dog-barking.gif"
     ];
     const DOG_GIFS_SOURCES = [
       ["/assets/dog-blah-blah-blah.gif","https://upload.wikimedia.org/wikipedia/commons/1/18/Dog_tail_wagging.gif"],
@@ -190,7 +193,6 @@
       ["/assets/talking-ben.gif","https://upload.wikimedia.org/wikipedia/commons/5/5a/Dog_shakes_head.gif"],
       ["/assets/dog-phone.gif","https://upload.wikimedia.org/wikipedia/commons/8/8c/Dog_sleeping.gif"]
     ];
-    const CONFETTI_EMOJIS = ["🐶","🦴","🐾","⭐","✨","💥"];
     const QUIPS = [
       "Licensed in Bark-itecture, minor in Zoomology.",
       "Powered by snacks and questionable science.",
@@ -198,8 +200,9 @@
       "100% organic bark. No fillers.",
       "Now with extra tail wag per paragraph."
     ];
+    const CONFETTI_EMOJIS = ["🐶","🦴","🐾","⭐","✨","💥"];
 
-    /* ============== ELEMENTS ============== */
+    /* ================== ELEMENTS ================== */
     const replyEl = document.getElementById('reply');
     const translateBtn = document.getElementById('translateBtn');
     const copyBtn = document.getElementById('copyBtn');
@@ -209,6 +212,12 @@
     const zoomiesEl = document.getElementById('zoomies');
     const zoomLabelEl = document.getElementById('zoomLabel');
     const chipsEl = document.getElementById('traitChips');
+    const gifRail = document.getElementById('gifRail');
+    const gifToggle = document.getElementById('gifToggle');
+    const quipEl = document.getElementById('quip');
+    const bgBubble = document.getElementById('bgBubble');
+    const heroBubble = document.getElementById('heroBubble');
+
     const segGroups = {
       count: document.getElementById('countSeg'),
       pitch: document.getElementById('pitchSeg'),
@@ -216,24 +225,19 @@
       mood: document.getElementById('moodSeg'),
       squirrel: document.getElementById('squirrelSeg'),
     };
-    const gifRail = document.getElementById('gifRail');
-    const gifToggle = document.getElementById('gifToggle');
-    const quipEl = document.getElementById('quip');
-    const heroDog = document.getElementById('heroDog');
-    const heroBubble = document.getElementById('heroBubble');
 
     let lastPlainLine = "";
 
-    /* ============== HELPERS ============== */
-    const prefersReduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-    const pick = (arr) => arr[Math.floor(Math.random()*arr.length)];
+    /* ================== HELPERS ================== */
+    const pick = (arr)=>arr[Math.floor(Math.random()*arr.length)];
+    const prefersReduced = ()=> window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
 
     function typeWriter(el,text,speed=40){
       if (prefersReduced()) { el.textContent = text; return Promise.resolve(); }
-      el.textContent = "";
+      el.textContent="";
       return new Promise(async (resolve)=>{
         for(let i=0;i<text.length;i++){
-          el.textContent += text[i];
+          el.textContent+=text[i];
           await new Promise(r=>setTimeout(r,speed));
         }
         resolve();
@@ -241,113 +245,103 @@
     }
     function decorate(line){ return `${line} <div class="stamp">${pick(STAMPS)}</div>`; }
     function zoomLabel(v){
-      const n = Number(v);
-      const bucket = n<=2 ? "Couch potato" : n<=6 ? "Wigglebutt" : "Tornado";
-      zoomLabelEl.textContent = `${n} · ${bucket}`;
+      const n=Number(v);
+      const bucket=n<=2?"Couch potato":n<=6?"Wigglebutt":"Tornado";
+      zoomLabelEl.textContent=`${n} · ${bucket}`;
     }
     function showToast(msg){
-      toastEl.textContent = msg;
+      toastEl.textContent=msg;
       toastEl.classList.add('on');
-      setTimeout(()=> toastEl.classList.remove('on'), 1500);
+      setTimeout(()=>toastEl.classList.remove('on'),1500);
     }
     function popConfetti(count=24){
       if (prefersReduced()) return;
-      const layer = document.createElement('div');
-      layer.className = 'confetti'; document.body.appendChild(layer);
-      const W = window.innerWidth;
-      for (let i=0; i<count; i++){
-        const s = document.createElement('span');
-        s.className = 'piece';
-        s.textContent = pick(CONFETTI_EMOJIS);
-        s.style.left = (Math.random()*W) + 'px';
-        s.style.fontSize = (16+Math.random()*14) + 'px';
-        s.style.animationDelay = (Math.random()*300|0) + 'ms';
+      const layer=document.createElement('div');
+      layer.className='confetti'; document.body.appendChild(layer);
+      const W=window.innerWidth;
+      for(let i=0;i<count;i++){
+        const s=document.createElement('span');
+        s.className='piece';
+        s.textContent=pick(CONFETTI_EMOJIS);
+        s.style.left=(Math.random()*W)+'px';
+        s.style.fontSize=(16+Math.random()*14)+'px';
+        s.style.animationDelay=(Math.random()*300|0)+'ms';
         layer.appendChild(s);
       }
-      setTimeout(()=> layer.remove(), 1600);
+      setTimeout(()=>layer.remove(),1600);
     }
     function shuffle(a){ return [...a].sort(()=>Math.random()-0.5); }
 
-    // Robust image loader with fallbacks
     function loadWithFallback(imgEl, sources, onFail){
-      const list = [...sources]; // copy
-      const tryNext = () => {
-        if (!list.length) { onFail?.(); return; }
-        const src = list.shift();
-        imgEl.src = src;
-        imgEl.onerror = tryNext;
+      const list=[...sources];
+      const tryNext=()=>{
+        if(!list.length){ onFail?.(); return; }
+        const src=list.shift();
+        imgEl.src=src;
+        imgEl.onerror=tryNext;
       };
       tryNext();
     }
 
-    /* ============== UI WIRING ============== */
-    // Hero image + bubble rotation
-    loadWithFallback(heroDog, HERO_SOURCES, () => (document.querySelector('.hero').style.display='none'));
-    setInterval(()=> { heroBubble.textContent = pick([
-      "Translator online. Begin borks.",
-      "Fluent in Treatish.",
-      "Certified Good Dog™ interpreter.",
-      "Now decoding tail-wags…",
-      "Woof to text engaged."
-    ]); }, 3500);
-
-    // Trait chips
+    /* ================== UI WIRING ================== */
+    // Chips
     chipsEl.addEventListener('click', (e)=>{
-      if (e.target.tagName !== 'BUTTON') return;
+      if (e.target.tagName!=='BUTTON') return;
       e.target.classList.toggle('chip-on');
     });
+
     // Segmented groups (single select)
     Object.values(segGroups).forEach(seg=>{
       seg.addEventListener('click', e=>{
-        if (e.target.tagName !== 'BUTTON') return;
+        if (e.target.tagName!=='BUTTON') return;
         seg.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
         e.target.classList.add('on');
       });
     });
 
-    // Randomize Woof-Meter
-    document.getElementById('randomizeWoof').onclick = ()=>{
+    // Randomize woof
+    document.getElementById('randomizeWoof').onclick=()=>{
       Object.values(segGroups).forEach(seg=>{
-        const btns = Array.from(seg.querySelectorAll('button'));
-        const r = pick(btns);
+        const btns=Array.from(seg.querySelectorAll('button'));
+        const r=pick(btns);
         btns.forEach(b=>b.classList.remove('on'));
         r.classList.add('on');
       });
-      const z = Math.floor(Math.random()*11);
-      zoomiesEl.value = z; zoomLabel(z);
+      const z=Math.floor(Math.random()*11);
+      zoomiesEl.value=z; zoomLabel(z);
     };
 
     // Zoom label
-    zoomiesEl.addEventListener('input', e=> zoomLabel(e.target.value));
+    zoomiesEl.addEventListener('input',e=>zoomLabel(e.target.value));
     zoomLabel(zoomiesEl.value);
 
     // Copy
-    copyBtn.addEventListener('click', async ()=>{
-      const text = lastPlainLine || replyEl.textContent;
-      if (!text || text.trim()==='—' || /Translating/.test(text)) { showToast('Nothing to copy'); return; }
-      try { await navigator.clipboard.writeText(text.trim()); showToast('Copied!'); }
-      catch { showToast('Copy failed'); }
-    });
+    copyBtn.onclick=async()=>{
+      if(!lastPlainLine){ showToast("Nothing to copy"); return; }
+      try{ await navigator.clipboard.writeText(lastPlainLine); showToast("Copied!"); }
+      catch{ showToast("Copy failed"); }
+    };
 
-    // GIF rail (with fallbacks)
+    // GIF rail (hotlink-safe fallbacks)
     function renderGifs(){
-      if (!gifToggle.checked) { gifRail.innerHTML = ""; return; }
-      const picks = shuffle(DOG_GIFS_SOURCES).slice(0,4);
-      const CAPS = [
+      if(!gifToggle.checked){ gifRail.innerHTML=""; return; }
+      const picks=shuffle(DOG_GIFS_SOURCES).slice(0,4);
+      const CAPS=[
         "Explaining advanced Barkonomics.",
         "Consulting Professor Ben.",
         "Zoomies research in progress.",
         "Bark stream, 24/7."
       ];
-      gifRail.innerHTML = picks.map((arr, i) => `
+      gifRail.innerHTML=picks.map((arr,i)=>`
         <figure class="gif-card">
           <img referrerpolicy="no-referrer" alt="Dog gif" />
-          <figcaption class="caption">${CAPS[i % CAPS.length]}</figcaption>
+          <figcaption class="caption">${CAPS[i%CAPS.length]}</figcaption>
         </figure>
       `).join("");
-      Array.from(gifRail.querySelectorAll('.gif-card')).forEach((card, i) => {
-        const img = card.querySelector('img');
-        loadWithFallback(img, picks[i], () => {
+      Array.from(gifRail.querySelectorAll('.gif-card')).forEach((card,i)=>{
+        const img=card.querySelector('img');
+        // try local then Wikimedia fallback
+        loadWithFallback(img, picks[i], ()=>{
           card.classList.add('failed');
           img.remove();
         });
@@ -355,40 +349,88 @@
     }
     gifToggle?.addEventListener('change', renderGifs);
 
-    /* ============== TRANSLATE (NO API) ============== */
+    // Small hero bubble rotation
+    setInterval(()=>{
+      heroBubble.textContent = pick([
+        "Translator online. Begin borks.",
+        "Fluent in Treatish.",
+        "Certified Good Dog™ interpreter.",
+        "Now decoding tail-wags…",
+        "Woof to text engaged."
+      ]);
+    }, 3500);
+
+    /* ================== BACKGROUND BUBBLE ROTATION + SYNC ================== */
+    const BUBBLE_LINES = [
+      "Woof means hello!",
+      "Arf arf = snacks now.",
+      "Bork bork → intruder alert!",
+      "Zoomies are my cardio.",
+      "Translation: I run this house.",
+      "Tail wag = 100% approval.",
+      "Sniff sniff... data collected."
+    ];
+    let bubbleIndex=0, bubbleTimer=null, resumeTimer=null;
+
+    function fadeSwap(el, text, dur=300){
+      el.style.transition='opacity '+dur+'ms ease';
+      el.style.opacity='0';
+      setTimeout(()=>{ el.textContent=text; el.style.opacity='1'; }, dur);
+    }
+    function startBubbleRotation(){
+      stopBubbleRotation();
+      bubbleTimer=setInterval(()=>{
+        bubbleIndex=(bubbleIndex+1)%BUBBLE_LINES.length;
+        fadeSwap(bgBubble, BUBBLE_LINES[bubbleIndex]);
+      }, 4000);
+    }
+    function stopBubbleRotation(){ if(bubbleTimer){ clearInterval(bubbleTimer); bubbleTimer=null; } }
+    function setBgBubble(text, holdMs=8000){
+      stopBubbleRotation();
+      fadeSwap(bgBubble, text);
+      if(resumeTimer) clearTimeout(resumeTimer);
+      resumeTimer=setTimeout(()=>startBubbleRotation(), holdMs);
+    }
+    startBubbleRotation();
+
+    /* ================== TRANSLATE (NO API) ================== */
     function readSegVal(segId, fallback){ return document.querySelector(`#${segId} .on`)?.dataset.val ?? fallback; }
     function squirrelEasterEgg(){ return "SQUIRREL ALERT. All systems redirect to window patrol. If lost, follow the chaos trail."; }
     function tornadoEasterEgg(){ return "Zoomies at DEFCON 1. Sofa, it’s not you—it’s me. BRB in a blur."; }
 
     async function doTranslate(){
-      // choose line
-      let line;
+      // choose line (you can factor in meters if you want)
       const squirrel = Number(readSegVal('squirrelSeg','50'));
-      const zoomies = Number(document.getElementById('zoomies').value || 5);
+      const zoomies = Number(zoomiesEl.value || 5);
+      let line;
       if (squirrel === 100) line = squirrelEasterEgg();
       else if (zoomies >= 10) line = tornadoEasterEgg();
       else line = pick(BARK_LINES);
+
       lastPlainLine = line;
 
-      // show barking GIF during typing
-      loadWithFallback(barkGifImg, BARK_SOURCES, () => barkGifEl.style.display='none');
+      // barking gif on
+      loadWithFallback(barkGifImg, BARK_SOURCES, ()=> barkGifEl.style.display='none');
       barkGifEl.classList.add('on');
 
-      // animate bubble + type
+      // type, then decorate
       replyEl.classList.remove('new'); void replyEl.offsetWidth; replyEl.classList.add('new');
       await typeWriter(replyEl, line, 40);
       replyEl.innerHTML = decorate(replyEl.textContent);
 
-      // hide barking GIF
+      // barking gif off
       barkGifEl.classList.remove('on');
 
-      // fun extras
+      // mirror to background bubble for ~8s, then resume rotating
+      setBgBubble(lastPlainLine);
+
+      // flair
       if (Math.random() < 0.35) popConfetti(28);
       renderGifs();
       quipEl.textContent = pick(QUIPS);
     }
 
-    translateBtn.onclick = () => doTranslate();
+    translateBtn.onclick = doTranslate;
 
     // Initial fun render
     renderGifs();
@@ -396,4 +438,3 @@
   </script>
 </body>
 </html>
-

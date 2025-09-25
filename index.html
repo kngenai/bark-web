@@ -289,15 +289,13 @@
 
     const controller = new AbortController();
     const timer = setTimeout(()=>controller.abort(), CLIENT_TIMEOUT_MS);
-
     const res = await fetch(`/api/translate?ts=${Date.now()}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      cache: 'no-store',                // hint to bypass caches
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    }).catch((e)=>{ throw e; })
-      .finally(()=> clearTimeout(timer));
+  method: 'POST',
+  headers: { 'Content-Type':'application/json' },
+  cache: 'no-store',        // hint to browser
+  body: JSON.stringify(payload)
+});
+
 
     if (res.status === 429) {
       const data = await res.json().catch(()=> ({}));
@@ -376,5 +374,6 @@
 
 </body>
 </html>
+
 
 

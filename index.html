@@ -122,11 +122,17 @@
     </section>
 
     <section class="result" aria-live="polite">
-      <div class="result-head"><b>Translation:</b></div>
+      <div class="result-head">
+        <b>Translation:</b>
+        <button id="copyBtn" class="btn icon" aria-label="Copy translation" title="Copy">
+          📋
+        </button>
+      </div>
       <div id="reply" class="bubble">—</div>
     </section>
 
     <div id="banner" class="banner" style="display:none;"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
     <p class="small">No health or training advice. Just jokes.</p>
   </main>
 
@@ -152,8 +158,13 @@
     const replyEl = document.getElementById('reply');
     const banner = document.getElementById('banner');
     const translateBtn = document.getElementById('translateBtn');
+    const copyBtn = document.getElementById('copyBtn');
     const zoomiesEl = document.getElementById('zoomies');
     const zoomLabelEl = document.getElementById('zoomLabel');
+    const toastEl = document.getElementById('toast');
+
+    // Keep a plain-text version for copying (without stamps)
+    let lastPlainLine = "";
 
     // segmented groups
     const segGroups = {
@@ -291,6 +302,13 @@
     function squirrelEasterEgg(){ return "SQUIRREL ALERT. All systems redirect to window patrol. If lost, follow the chaos trail."; }
     function tornadoEasterEgg(){ return "Zoomies at DEFCON 1. Sofa, it’s not you—it’s me. BRB in a blur."; }
 
+    // Toast
+    function showToast(msg){
+      toastEl.textContent = msg;
+      toastEl.classList.add('on');
+      setTimeout(()=> toastEl.classList.remove('on'), 1800);
+    }
+
     // Main “translate” (no API)
     async function doTranslate() {
       const state = buildPayload();
@@ -302,14 +320,12 @@
       } else if (state.woofMeter.zoomies >= 10) {
         line = tornadoEasterEgg();
       } else {
-        // Lightly bias selections by traits/breed for fun
         const traitBonus = state.traits.includes('squirrel-obsessed') ? 0.25 : 0;
-        if (Math.random() < traitBonus) {
-          line = squirrelEasterEgg();
-        } else {
-          line = pickRandom(BARK_LINES);
-        }
+        if (Math.random() < traitBonus) line = squirrelEasterEgg();
+        else line = pickRandom(BARK_LINES);
       }
+
+      lastPlainLine = line; // save for "Copy"
 
       // Animate bubble
       replyEl.classList.remove('new');
@@ -343,6 +359,31 @@
       zoomiesEl.value = z; zoomLabel(z);
       saveState();
     };
+
+    // Copy to clipboard
+    copyBtn.addEventListener('click', async ()=>{
+      const text = lastPlainLine || replyEl.textContent || '';
+      if (!text || text.trim() === '—' || /Translating/.test(text)) {
+        showToast('Nothing to copy yet');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text.trim());
+        showToast('Copied!');
+        // quick visual tick
+        copyBtn.classList.add('copied');
+        setTimeout(()=>copyBtn.classList.remove('copied'), 600);
+      } catch {
+        // Fallback: selection copy
+        const range = document.createRange();
+        range.selectNodeContents(replyEl);
+        const sel = window.getSelection();
+        sel.removeAllRanges(); sel.addRange(range);
+        const ok = document.execCommand('copy');
+        sel.removeAllRanges();
+        showToast(ok ? 'Copied!' : 'Copy failed');
+      }
+    });
 
     // Keyboard: Enter to submit
     document.addEventListener('keydown', (e)=>{

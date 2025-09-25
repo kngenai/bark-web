@@ -143,3 +143,10 @@ button:disabled{ opacity:.65; cursor:not-allowed; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* Barking GIF */
+.bark-gif{ display:none; margin-top:12px; text-align:center; }
+.bark-gif img{ width:120px; border-radius:12px; box-shadow:0 6px 14px rgba(0,0,0,.15); }
+.bark-gif.on{ display:block; }
+@media (prefers-reduced-motion: reduce){ .bark-gif{ display:none !important; } }
+

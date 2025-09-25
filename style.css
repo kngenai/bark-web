@@ -252,3 +252,18 @@ button:disabled{ opacity:.65; cursor:not-allowed; }
   10%{ opacity: 1; }
   100%{ transform: translateY(110vh) rotate(540deg); opacity: 0; }
 }
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 20px 0 4px;
+  color: #0f172a;
+  text-align: center;
+}
+
+.section-sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0 0 12px;
+  text-align: center;
+}
+

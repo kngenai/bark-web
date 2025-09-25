@@ -5,48 +5,24 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Bark Translator — Web 🐶</title>
   <meta name="description" content="A playful dog bark translator tailored to breed, traits, and your Woof-Meter." />
+  <!-- Helps with some CDNs that block hotlinking -->
+  <meta name="referrer" content="no-referrer">
   <link rel="stylesheet" href="style.css" />
-  <style>
-    /* Minimal extras to ensure new bits work even if style.css wasn’t updated */
-    .bark-gif{ display:none; margin-top:12px; text-align:center; }
-    .bark-gif img{ width:120px; border-radius:12px; box-shadow:0 6px 14px rgba(0,0,0,.15); }
-    .bark-gif.on{ display:block; }
-    @media (prefers-reduced-motion: reduce){ .bark-gif{ display:none !important; } }
-
-    .reactions{ display:flex; align-items:center; gap:10px; margin-top:14px;
-      background:#fff; border:1px solid #e6edf3; border-radius:12px; padding:10px; }
-    .reactions .spacer{ flex:1; }
-    .react{ background:#fff; border:1px solid #e6edf3; border-radius:999px; padding:8px 10px; font-size:16px; display:flex; align-items:center; gap:6px; }
-    .react .count{ font-weight:700; font-size:13px; color:#344054; }
-    .toggle{ display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
-    .toggle input{ display:none; }
-    .toggle .slider{ width:44px; height:24px; background:#e5e7eb; border-radius:999px; position:relative; display:inline-block; transition:background .2s; }
-    .toggle .slider::after{ content:""; position:absolute; top:3px; left:3px; width:18px; height:18px; background:#fff; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,.2); transition:left .2s; }
-    .toggle input:checked + .slider{ background:#86efac; }
-    .toggle input:checked + .slider::after{ left:23px; }
-    .toggle .label{ color:#344054; font-weight:600; }
-
-    .gif-rail{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:14px; }
-    @media (max-width:720px){ .gif-rail{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
-    .gif-card{ position:relative; overflow:hidden; border-radius:12px; border:1px solid #e6edf3; background:#fff; aspect-ratio:1/1; }
-    .gif-card img{ width:100%; height:100%; object-fit:cover; display:block; }
-    .gif-card .caption{ position:absolute; bottom:6px; left:6px; right:6px; font-size:12px; font-weight:700; color:#111; background:rgba(255,255,255,.85); padding:4px 6px; border-radius:8px; }
-
-    .toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(16px);
-      background:#0f172a; color:#fff; padding:10px 14px; border-radius:10px; opacity:0; pointer-events:none;
-      transition:opacity .15s, transform .15s; box-shadow:0 10px 24px rgba(0,0,0,.25); font-weight:600; font-size:14px; }
-    .toast.on{ opacity:1; transform:translateX(-50%) translateY(0); }
-
-    .confetti{ position:fixed; inset:0; pointer-events:none; overflow:hidden; }
-    .confetti .piece{ position:absolute; will-change:transform,opacity; font-size:18px; opacity:0; animation:drop 1200ms ease-in forwards; }
-    @keyframes drop{ 0%{ transform:translateY(-20vh) rotate(0); opacity:0; } 10%{ opacity:1; } 100%{ transform:translateY(110vh) rotate(540deg); opacity:0; } }
-    @media (prefers-reduced-motion: reduce){ .gif-rail{ display:none !important; } }
-  </style>
 </head>
 <body>
   <main class="wrap">
     <h1>Dog Bark Translator 🐶</h1>
     <p class="sub">Pick a breed, tap a few traits, dial in the Woof-Meter, then translate. <em>Entertainment only!</em></p>
+
+    <!-- Hero dog + speech bubble -->
+    <section class="hero">
+      <div class="dog">
+        <img id="heroDog" alt="Happy dog mascot" />
+      </div>
+      <div class="bubble-callout">
+        <span id="heroBubble">Woof! I speak human now.</span>
+      </div>
+    </section>
 
     <section class="controls" aria-label="Inputs">
       <!-- Breed -->
@@ -153,31 +129,10 @@
       </div>
       <div id="reply" class="bubble">—</div>
 
-      <!-- Barking GIF -->
-<!-- Replace your barking GIF block with this: -->
-<div id="barkGif" class="bark-gif" aria-hidden="true">
-  <img id="barkGifImg" alt="Dog barking" />
-</div>
-
-<script>
-  // Put local first, then a couple of permissive backups
-  const BARK_SOURCES = [
-    "/assets/dog-bark.gif", // your local file
-    "https://media.tenor.com/1E2c1x8n1tQAAAAC/dog-barking.gif",
-    "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif"
-  ];
-
-  function loadWithFallback(imgEl, sources){
-    if (!sources.length) { imgEl.closest('.bark-gif').style.display = 'none'; return; }
-    const src = sources.shift();
-    imgEl.src = src;
-    imgEl.onerror = () => loadWithFallback(imgEl, sources);
-  }
-
-  const barkImg = document.getElementById('barkGifImg');
-  loadWithFallback(barkImg, [...BARK_SOURCES]);
-</script>
-
+      <!-- Barking GIF while typing (with fallbacks) -->
+      <div id="barkGif" class="bark-gif" aria-hidden="true">
+        <img id="barkGifImg" alt="Dog barking" referrerpolicy="no-referrer" />
+      </div>
     </section>
 
     <!-- reactions + gif rail + quip -->
@@ -216,14 +171,21 @@
       "Tail wag report: velocity exceeding safe household limits. Brace yourselves!"
     ];
     const STAMPS = ["🐾 Paw Approved","🦴 Bone Certified","🐕 Good Dog Seal","🐶 Woof-100"];
-    const DOG_GIFS = [
-      { src: "/assets/dog-blah-blah-blah.gif", cap: "Explaining advanced Barkonomics." },
-      { src: "/assets/dog-talk-dog.gif",       cap: "Peer-reviewed barking." },
-      { src: "/assets/talking-ben.gif",        cap: "Consulting Professor Ben." },
-      { src: "/assets/dog-phone.gif",          cap: "Calling HR (Human Resources… for snacks)." },
-      // fallback stock
-      { src: "https://media.giphy.com/media/3o6Zt6ML6BklcajjsA/giphy.gif", cap: "Zoomies research in progress." },
-      { src: "https://media.giphy.com/media/l0HlQ7LRal5vS9nSg/giphy.gif",  cap: "Bark stream, 24/7." }
+    // Fallback sources that allow hotlinking
+    const HERO_SOURCES = [
+      "/assets/dog-hero.png",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Husky_Walking.jpg/320px-Husky_Walking.jpg"
+    ];
+    const BARK_SOURCES = [
+      "/assets/dog-bark.gif",
+      "https://upload.wikimedia.org/wikipedia/commons/8/88/Dog_barking.gif",
+      "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif"
+    ];
+    const DOG_GIFS_SOURCES = [
+      ["/assets/dog-blah-blah-blah.gif","https://upload.wikimedia.org/wikipedia/commons/1/18/Dog_tail_wagging.gif"],
+      ["/assets/dog-talk-dog.gif","https://upload.wikimedia.org/wikipedia/commons/5/5f/Doggy_treadmill.gif"],
+      ["/assets/talking-ben.gif","https://upload.wikimedia.org/wikipedia/commons/5/5a/Dog_shakes_head.gif"],
+      ["/assets/dog-phone.gif","https://upload.wikimedia.org/wikipedia/commons/8/8c/Dog_sleeping.gif"]
     ];
     const CONFETTI_EMOJIS = ["🐶","🦴","🐾","⭐","✨","💥"];
     const QUIPS = [
@@ -234,12 +196,13 @@
       "Now with extra tail wag per paragraph."
     ];
 
-    /* ============== ELEMENTS/WIRING ============== */
+    /* ============== ELEMENTS ============== */
     const replyEl = document.getElementById('reply');
     const translateBtn = document.getElementById('translateBtn');
     const copyBtn = document.getElementById('copyBtn');
     const toastEl = document.getElementById('toast');
     const barkGifEl = document.getElementById('barkGif');
+    const barkGifImg = document.getElementById('barkGifImg');
     const zoomiesEl = document.getElementById('zoomies');
     const zoomLabelEl = document.getElementById('zoomLabel');
     const chipsEl = document.getElementById('traitChips');
@@ -253,14 +216,17 @@
     const gifRail = document.getElementById('gifRail');
     const gifToggle = document.getElementById('gifToggle');
     const quipEl = document.getElementById('quip');
+    const heroDog = document.getElementById('heroDog');
+    const heroBubble = document.getElementById('heroBubble');
 
     let lastPlainLine = "";
 
     /* ============== HELPERS ============== */
-    function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+    const prefersReduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    const pick = (arr) => arr[Math.floor(Math.random()*arr.length)];
+
     function typeWriter(el,text,speed=40){
-      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-      if (reduce) { el.textContent = text; return Promise.resolve(); }
+      if (prefersReduced()) { el.textContent = text; return Promise.resolve(); }
       el.textContent = "";
       return new Promise(async (resolve)=>{
         for(let i=0;i<text.length;i++){
@@ -282,8 +248,7 @@
       setTimeout(()=> toastEl.classList.remove('on'), 1500);
     }
     function popConfetti(count=24){
-      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-      if (reduce) return;
+      if (prefersReduced()) return;
       const layer = document.createElement('div');
       layer.className = 'confetti'; document.body.appendChild(layer);
       const W = window.innerWidth;
@@ -300,7 +265,29 @@
     }
     function shuffle(a){ return [...a].sort(()=>Math.random()-0.5); }
 
-    /* ============== UI BEHAVIOR ============== */
+    // Robust image loader with fallbacks
+    function loadWithFallback(imgEl, sources, onFail){
+      const list = [...sources]; // copy
+      const tryNext = () => {
+        if (!list.length) { onFail?.(); return; }
+        const src = list.shift();
+        imgEl.src = src;
+        imgEl.onerror = tryNext;
+      };
+      tryNext();
+    }
+
+    /* ============== UI WIRING ============== */
+    // Hero image + bubble rotation
+    loadWithFallback(heroDog, HERO_SOURCES, () => (document.querySelector('.hero').style.display='none'));
+    setInterval(()=> { heroBubble.textContent = pick([
+      "Translator online. Begin borks.",
+      "Fluent in Treatish.",
+      "Certified Good Dog™ interpreter.",
+      "Now decoding tail-wags…",
+      "Woof to text engaged."
+    ]); }, 3500);
+
     // Trait chips
     chipsEl.addEventListener('click', (e)=>{
       if (e.target.tagName !== 'BUTTON') return;
@@ -339,20 +326,31 @@
       catch { showToast('Copy failed'); }
     });
 
-    // GIF rail
+    // GIF rail (with fallbacks)
     function renderGifs(){
-      if (!gifToggle.checked) { gifRail.innerHTML = ''; return; }
-      const picks = shuffle(DOG_GIFS).slice(0,4);
-      gifRail.innerHTML = picks.map(g=>`
+      if (!gifToggle.checked) { gifRail.innerHTML = ""; return; }
+      const picks = shuffle(DOG_GIFS_SOURCES).slice(0,4);
+      const CAPS = [
+        "Explaining advanced Barkonomics.",
+        "Consulting Professor Ben.",
+        "Zoomies research in progress.",
+        "Bark stream, 24/7."
+      ];
+      gifRail.innerHTML = picks.map((arr, i) => `
         <figure class="gif-card">
-          <img loading="lazy" decoding="async" src="${g.src}" alt="Dog gif"
-               onerror="this.onerror=null;this.src='https://media.giphy.com/media/3o6Zt6ML6BklcajjsA/giphy.gif';"/>
-          <figcaption class="caption">${g.cap}</figcaption>
+          <img referrerpolicy="no-referrer" alt="Dog gif" />
+          <figcaption class="caption">${CAPS[i % CAPS.length]}</figcaption>
         </figure>
-      `).join('');
+      `).join("");
+      Array.from(gifRail.querySelectorAll('.gif-card')).forEach((card, i) => {
+        const img = card.querySelector('img');
+        loadWithFallback(img, picks[i], () => {
+          card.classList.add('failed');
+          img.remove();
+        });
+      });
     }
-    gifToggle.addEventListener('change', renderGifs);
-    function rotateQuip(){ quipEl.textContent = pick(QUIPS); }
+    gifToggle?.addEventListener('change', renderGifs);
 
     /* ============== TRANSLATE (NO API) ============== */
     function readSegVal(segId, fallback){ return document.querySelector(`#${segId} .on`)?.dataset.val ?? fallback; }
@@ -370,12 +368,13 @@
       lastPlainLine = line;
 
       // show barking GIF during typing
+      loadWithFallback(barkGifImg, BARK_SOURCES, () => barkGifEl.style.display='none');
       barkGifEl.classList.add('on');
 
       // animate bubble + type
       replyEl.classList.remove('new'); void replyEl.offsetWidth; replyEl.classList.add('new');
       await typeWriter(replyEl, line, 40);
-      replyEl.innerHTML = `${replyEl.textContent} <div class="stamp">${pick(STAMPS)}</div>`;
+      replyEl.innerHTML = decorate(replyEl.textContent);
 
       // hide barking GIF
       barkGifEl.classList.remove('on');
@@ -383,15 +382,14 @@
       // fun extras
       if (Math.random() < 0.35) popConfetti(28);
       renderGifs();
-      rotateQuip();
+      quipEl.textContent = pick(QUIPS);
     }
 
     translateBtn.onclick = () => doTranslate();
 
     // Initial fun render
     renderGifs();
-    rotateQuip();
+    quipEl.textContent = pick(QUIPS);
   </script>
 </body>
 </html>
-

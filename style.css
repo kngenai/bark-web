@@ -276,3 +276,39 @@ button:disabled{ opacity:.65; cursor:not-allowed; }
   }
 }
 
+/* --- Fix background layer visibility and stacking --- */
+.bg-hero{
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;              /* was -1: bring it above the page background */
+  pointer-events: none;
+}
+
+/* Ensure the main app sits above the background layer */
+.wrap{ position: relative; z-index: 1; }
+
+/* Responsive placement that works on big and small screens */
+.bg-dog{
+  position: absolute;
+  bottom: clamp(8px, 6vh, 40px);
+  left: clamp(16px, 6vw, 80px);
+  max-width: clamp(220px, 24vw, 380px);
+  opacity: .18;
+}
+
+.bg-bubble{
+  position: absolute;
+  bottom: clamp(140px, 22vh, 280px);
+  left: calc(clamp(16px, 6vw, 80px) + clamp(180px, 20vw, 320px));
+  max-width: clamp(220px, 28vw, 420px);
+  font-size: clamp(14px, 1.2vw, 18px);
+  opacity: .95;
+}
+
+@media (max-width: 720px){
+  .bg-dog{ max-width: clamp(180px, 34vw, 260px); left: 5vw; bottom: 2vh; }
+  .bg-bubble{ left: clamp(140px, 44vw, 56vw); bottom: clamp(120px, 20vh, 220px); max-width: clamp(200px, 56vw, 300px); }
+}
+
+

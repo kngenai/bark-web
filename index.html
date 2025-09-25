@@ -6,6 +6,42 @@
   <title>Bark Translator — Web 🐶</title>
   <meta name="description" content="A playful dog bark translator tailored to breed, traits, and your Woof-Meter." />
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Minimal extras to ensure new bits work even if style.css wasn’t updated */
+    .bark-gif{ display:none; margin-top:12px; text-align:center; }
+    .bark-gif img{ width:120px; border-radius:12px; box-shadow:0 6px 14px rgba(0,0,0,.15); }
+    .bark-gif.on{ display:block; }
+    @media (prefers-reduced-motion: reduce){ .bark-gif{ display:none !important; } }
+
+    .reactions{ display:flex; align-items:center; gap:10px; margin-top:14px;
+      background:#fff; border:1px solid #e6edf3; border-radius:12px; padding:10px; }
+    .reactions .spacer{ flex:1; }
+    .react{ background:#fff; border:1px solid #e6edf3; border-radius:999px; padding:8px 10px; font-size:16px; display:flex; align-items:center; gap:6px; }
+    .react .count{ font-weight:700; font-size:13px; color:#344054; }
+    .toggle{ display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+    .toggle input{ display:none; }
+    .toggle .slider{ width:44px; height:24px; background:#e5e7eb; border-radius:999px; position:relative; display:inline-block; transition:background .2s; }
+    .toggle .slider::after{ content:""; position:absolute; top:3px; left:3px; width:18px; height:18px; background:#fff; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,.2); transition:left .2s; }
+    .toggle input:checked + .slider{ background:#86efac; }
+    .toggle input:checked + .slider::after{ left:23px; }
+    .toggle .label{ color:#344054; font-weight:600; }
+
+    .gif-rail{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:14px; }
+    @media (max-width:720px){ .gif-rail{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    .gif-card{ position:relative; overflow:hidden; border-radius:12px; border:1px solid #e6edf3; background:#fff; aspect-ratio:1/1; }
+    .gif-card img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .gif-card .caption{ position:absolute; bottom:6px; left:6px; right:6px; font-size:12px; font-weight:700; color:#111; background:rgba(255,255,255,.85); padding:4px 6px; border-radius:8px; }
+
+    .toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(16px);
+      background:#0f172a; color:#fff; padding:10px 14px; border-radius:10px; opacity:0; pointer-events:none;
+      transition:opacity .15s, transform .15s; box-shadow:0 10px 24px rgba(0,0,0,.25); font-weight:600; font-size:14px; }
+    .toast.on{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+    .confetti{ position:fixed; inset:0; pointer-events:none; overflow:hidden; }
+    .confetti .piece{ position:absolute; will-change:transform,opacity; font-size:18px; opacity:0; animation:drop 1200ms ease-in forwards; }
+    @keyframes drop{ 0%{ transform:translateY(-20vh) rotate(0); opacity:0; } 10%{ opacity:1; } 100%{ transform:translateY(110vh) rotate(540deg); opacity:0; } }
+    @media (prefers-reduced-motion: reduce){ .gif-rail{ display:none !important; } }
+  </style>
 </head>
 <body>
   <main class="wrap">
@@ -51,7 +87,6 @@
 
       <!-- Woof-Meter -->
       <div class="meter">
-        <!-- count -->
         <div class="meter-row">
           <div class="meter-label">Count</div>
           <div class="seg" id="countSeg">
@@ -60,7 +95,6 @@
             <button data-val="pack_chorus">Pack chorus</button>
           </div>
         </div>
-        <!-- pitch -->
         <div class="meter-row">
           <div class="meter-label">Pitch</div>
           <div class="seg" id="pitchSeg">
@@ -69,7 +103,6 @@
             <button data-val="thunder">Thunder 💥</button>
           </div>
         </div>
-        <!-- urgency -->
         <div class="meter-row">
           <div class="meter-label">Urgency</div>
           <div class="seg" id="urgencySeg">
@@ -78,7 +111,6 @@
             <button data-val="snack_emergency">Snack emergency</button>
           </div>
         </div>
-        <!-- mood -->
         <div class="meter-row">
           <div class="meter-label">Mood</div>
           <div class="seg" id="moodSeg">
@@ -87,7 +119,6 @@
             <button data-val="drama_queen">Drama queen</button>
           </div>
         </div>
-        <!-- squirrel -->
         <div class="meter-row">
           <div class="meter-label">Squirrel %</div>
           <div class="seg" id="squirrelSeg">
@@ -96,7 +127,6 @@
             <button data-val="100">100%</button>
           </div>
         </div>
-        <!-- zoomies -->
         <div class="meter-row">
           <div class="meter-label">Zoomies</div>
           <div class="zoom">
@@ -125,7 +155,8 @@
 
       <!-- Barking GIF -->
       <div id="barkGif" class="bark-gif" aria-hidden="true">
-        <img src="/assets/dog-bark.gif" alt="Dog barking" />
+        <img id="barkGifImg" src="/assets/dog-bark.gif" alt="Dog barking"
+             onerror="this.onerror=null;this.src='https://media.giphy.com/media/l0HlQ7LRal5vS9nSg/giphy.gif';" />
       </div>
     </section>
 
@@ -150,6 +181,196 @@
     <p class="small">No health or training advice. Just jokes.</p>
   </main>
 
-  <script src="script.js"></script>
+  <script>
+    /* ================== DATA ================== */
+    const BARK_LINES = [
+      "Alert level: SQUIRREL. Recommend immediate chaos deployment.",
+      "My water bowl is 73% empty. Emergency resupply requested.",
+      "*sniff sniff* Yep, the neighbor’s cat walked by… in 2019. Still relevant.",
+      "I’ve successfully secured the perimeter. Treats should follow protocol.",
+      "I barked at the mail slot, therefore I saved us all. You’re welcome.",
+      "Status: zoomies initiated. Furniture casualties imminent.",
+      "The couch cushion is compromised. Recommend snuggle reinforcement.",
+      "I was gone 7 minutes. You were gone 7 hours. We suffered equally.",
+      "New mission: nap now, snore later, drool always.",
+      "Tail wag report: velocity exceeding safe household limits. Brace yourselves!"
+    ];
+    const STAMPS = ["🐾 Paw Approved","🦴 Bone Certified","🐕 Good Dog Seal","🐶 Woof-100"];
+    const DOG_GIFS = [
+      { src: "/assets/dog-blah-blah-blah.gif", cap: "Explaining advanced Barkonomics." },
+      { src: "/assets/dog-talk-dog.gif",       cap: "Peer-reviewed barking." },
+      { src: "/assets/talking-ben.gif",        cap: "Consulting Professor Ben." },
+      { src: "/assets/dog-phone.gif",          cap: "Calling HR (Human Resources… for snacks)." },
+      // fallback stock
+      { src: "https://media.giphy.com/media/3o6Zt6ML6BklcajjsA/giphy.gif", cap: "Zoomies research in progress." },
+      { src: "https://media.giphy.com/media/l0HlQ7LRal5vS9nSg/giphy.gif",  cap: "Bark stream, 24/7." }
+    ];
+    const CONFETTI_EMOJIS = ["🐶","🦴","🐾","⭐","✨","💥"];
+    const QUIPS = [
+      "Licensed in Bark-itecture, minor in Zoomology.",
+      "Powered by snacks and questionable science.",
+      "If found, please return to the nearest couch.",
+      "100% organic bark. No fillers.",
+      "Now with extra tail wag per paragraph."
+    ];
+
+    /* ============== ELEMENTS/WIRING ============== */
+    const replyEl = document.getElementById('reply');
+    const translateBtn = document.getElementById('translateBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const toastEl = document.getElementById('toast');
+    const barkGifEl = document.getElementById('barkGif');
+    const zoomiesEl = document.getElementById('zoomies');
+    const zoomLabelEl = document.getElementById('zoomLabel');
+    const chipsEl = document.getElementById('traitChips');
+    const segGroups = {
+      count: document.getElementById('countSeg'),
+      pitch: document.getElementById('pitchSeg'),
+      urgency: document.getElementById('urgencySeg'),
+      mood: document.getElementById('moodSeg'),
+      squirrel: document.getElementById('squirrelSeg'),
+    };
+    const gifRail = document.getElementById('gifRail');
+    const gifToggle = document.getElementById('gifToggle');
+    const quipEl = document.getElementById('quip');
+
+    let lastPlainLine = "";
+
+    /* ============== HELPERS ============== */
+    function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+    function typeWriter(el,text,speed=40){
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      if (reduce) { el.textContent = text; return Promise.resolve(); }
+      el.textContent = "";
+      return new Promise(async (resolve)=>{
+        for(let i=0;i<text.length;i++){
+          el.textContent += text[i];
+          await new Promise(r=>setTimeout(r,speed));
+        }
+        resolve();
+      });
+    }
+    function decorate(line){ return `${line} <div class="stamp">${pick(STAMPS)}</div>`; }
+    function zoomLabel(v){
+      const n = Number(v);
+      const bucket = n<=2 ? "Couch potato" : n<=6 ? "Wigglebutt" : "Tornado";
+      zoomLabelEl.textContent = `${n} · ${bucket}`;
+    }
+    function showToast(msg){
+      toastEl.textContent = msg;
+      toastEl.classList.add('on');
+      setTimeout(()=> toastEl.classList.remove('on'), 1500);
+    }
+    function popConfetti(count=24){
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      if (reduce) return;
+      const layer = document.createElement('div');
+      layer.className = 'confetti'; document.body.appendChild(layer);
+      const W = window.innerWidth;
+      for (let i=0; i<count; i++){
+        const s = document.createElement('span');
+        s.className = 'piece';
+        s.textContent = pick(CONFETTI_EMOJIS);
+        s.style.left = (Math.random()*W) + 'px';
+        s.style.fontSize = (16+Math.random()*14) + 'px';
+        s.style.animationDelay = (Math.random()*300|0) + 'ms';
+        layer.appendChild(s);
+      }
+      setTimeout(()=> layer.remove(), 1600);
+    }
+    function shuffle(a){ return [...a].sort(()=>Math.random()-0.5); }
+
+    /* ============== UI BEHAVIOR ============== */
+    // Trait chips
+    chipsEl.addEventListener('click', (e)=>{
+      if (e.target.tagName !== 'BUTTON') return;
+      e.target.classList.toggle('chip-on');
+    });
+    // Segmented groups (single select)
+    Object.values(segGroups).forEach(seg=>{
+      seg.addEventListener('click', e=>{
+        if (e.target.tagName !== 'BUTTON') return;
+        seg.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+        e.target.classList.add('on');
+      });
+    });
+
+    // Randomize Woof-Meter
+    document.getElementById('randomizeWoof').onclick = ()=>{
+      Object.values(segGroups).forEach(seg=>{
+        const btns = Array.from(seg.querySelectorAll('button'));
+        const r = pick(btns);
+        btns.forEach(b=>b.classList.remove('on'));
+        r.classList.add('on');
+      });
+      const z = Math.floor(Math.random()*11);
+      zoomiesEl.value = z; zoomLabel(z);
+    };
+
+    // Zoom label
+    zoomiesEl.addEventListener('input', e=> zoomLabel(e.target.value));
+    zoomLabel(zoomiesEl.value);
+
+    // Copy
+    copyBtn.addEventListener('click', async ()=>{
+      const text = lastPlainLine || replyEl.textContent;
+      if (!text || text.trim()==='—' || /Translating/.test(text)) { showToast('Nothing to copy'); return; }
+      try { await navigator.clipboard.writeText(text.trim()); showToast('Copied!'); }
+      catch { showToast('Copy failed'); }
+    });
+
+    // GIF rail
+    function renderGifs(){
+      if (!gifToggle.checked) { gifRail.innerHTML = ''; return; }
+      const picks = shuffle(DOG_GIFS).slice(0,4);
+      gifRail.innerHTML = picks.map(g=>`
+        <figure class="gif-card">
+          <img loading="lazy" decoding="async" src="${g.src}" alt="Dog gif"
+               onerror="this.onerror=null;this.src='https://media.giphy.com/media/3o6Zt6ML6BklcajjsA/giphy.gif';"/>
+          <figcaption class="caption">${g.cap}</figcaption>
+        </figure>
+      `).join('');
+    }
+    gifToggle.addEventListener('change', renderGifs);
+    function rotateQuip(){ quipEl.textContent = pick(QUIPS); }
+
+    /* ============== TRANSLATE (NO API) ============== */
+    function readSegVal(segId, fallback){ return document.querySelector(`#${segId} .on`)?.dataset.val ?? fallback; }
+    function squirrelEasterEgg(){ return "SQUIRREL ALERT. All systems redirect to window patrol. If lost, follow the chaos trail."; }
+    function tornadoEasterEgg(){ return "Zoomies at DEFCON 1. Sofa, it’s not you—it’s me. BRB in a blur."; }
+
+    async function doTranslate(){
+      // choose line
+      let line;
+      const squirrel = Number(readSegVal('squirrelSeg','50'));
+      const zoomies = Number(document.getElementById('zoomies').value || 5);
+      if (squirrel === 100) line = squirrelEasterEgg();
+      else if (zoomies >= 10) line = tornadoEasterEgg();
+      else line = pick(BARK_LINES);
+      lastPlainLine = line;
+
+      // show barking GIF during typing
+      barkGifEl.classList.add('on');
+
+      // animate bubble + type
+      replyEl.classList.remove('new'); void replyEl.offsetWidth; replyEl.classList.add('new');
+      await typeWriter(replyEl, line, 40);
+      replyEl.innerHTML = `${replyEl.textContent} <div class="stamp">${pick(STAMPS)}</div>`;
+
+      // hide barking GIF
+      barkGifEl.classList.remove('on');
+
+      // fun extras
+      if (Math.random() < 0.35) popConfetti(28);
+      renderGifs();
+      rotateQuip();
+    }
+
+    translateBtn.onclick = () => doTranslate();
+
+    // Initial fun render
+    renderGifs();
+    rotateQuip();
+  </script>
 </body>
 </html>

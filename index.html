@@ -154,10 +154,30 @@
       <div id="reply" class="bubble">—</div>
 
       <!-- Barking GIF -->
-      <div id="barkGif" class="bark-gif" aria-hidden="true">
-        <img id="barkGifImg" src="/assets/dog-bark.gif" alt="Dog barking"
-             onerror="this.onerror=null;this.src='https://media.giphy.com/media/l0HlQ7LRal5vS9nSg/giphy.gif';" />
-      </div>
+<!-- Replace your barking GIF block with this: -->
+<div id="barkGif" class="bark-gif" aria-hidden="true">
+  <img id="barkGifImg" alt="Dog barking" />
+</div>
+
+<script>
+  // Put local first, then a couple of permissive backups
+  const BARK_SOURCES = [
+    "/assets/dog-bark.gif", // your local file
+    "https://media.tenor.com/1E2c1x8n1tQAAAAC/dog-barking.gif",
+    "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif"
+  ];
+
+  function loadWithFallback(imgEl, sources){
+    if (!sources.length) { imgEl.closest('.bark-gif').style.display = 'none'; return; }
+    const src = sources.shift();
+    imgEl.src = src;
+    imgEl.onerror = () => loadWithFallback(imgEl, sources);
+  }
+
+  const barkImg = document.getElementById('barkGifImg');
+  loadWithFallback(barkImg, [...BARK_SOURCES]);
+</script>
+
     </section>
 
     <!-- reactions + gif rail + quip -->
@@ -374,3 +394,4 @@
   </script>
 </body>
 </html>
+

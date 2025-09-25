@@ -1,4 +1,7 @@
 // api/translate.js
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import OpenAI from "openai";
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -180,4 +183,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
 

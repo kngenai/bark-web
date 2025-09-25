@@ -272,16 +272,51 @@
     }
     function shuffle(a){ return [...a].sort(()=>Math.random()-0.5); }
 
-    function loadWithFallback(imgEl, sources, onFail){
-      const list=[...sources];
-      const tryNext=()=>{
-        if(!list.length){ onFail?.(); return; }
-        const src=list.shift();
-        imgEl.src=src;
-        imgEl.onerror=tryNext;
-      };
-      tryNext();
-    }
+    <script>
+  // If you don't already have this helper, include it:
+  function loadWithFallback(imgEl, sources, onFail){
+    const list = [...sources];
+    const tryNext = () => {
+      if (!list.length) { onFail && onFail(); return; }
+      const src = list.shift();
+      imgEl.referrerPolicy = 'no-referrer';
+      imgEl.src = src;
+      imgEl.onerror = tryNext;
+    };
+    tryNext();
+  }
+
+  // 1) Background cartoon dog sources (local first, then permissive fallbacks)
+  const BG_DOG_SOURCES = [
+    "/assets/bg-dog-cartoon.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Dog_cartoon.svg/512px-Dog_cartoon.svg.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Cartoon_Dog.svg/512px-Cartoon_Dog.svg.png"
+  ];
+
+  // 2) Small hero mascot sources
+  const HERO_SOURCES = [
+    "/assets/dog-hero.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Husky_Walking.jpg/320px-Husky_Walking.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Golden_Retriever_medium-to-light-coat.jpg/320px-Golden_Retriever_medium-to-light-coat.jpg"
+  ];
+
+  // Kick off loads (runs once on page load)
+  const bgDog = document.getElementById('bgDog');
+  const heroDog = document.getElementById('heroDog');
+
+  loadWithFallback(bgDog, BG_DOG_SOURCES, () => {
+    // If everything fails, hide the background layer gracefully
+    const bg = document.querySelector('.bg-hero');
+    if (bg) bg.style.display = 'none';
+  });
+
+  loadWithFallback(heroDog, HERO_SOURCES, () => {
+    // If all fail, hide the little hero avatar
+    const heroImg = document.getElementById('heroDog');
+    if (heroImg) heroImg.style.display = 'none';
+  });
+</script>
+
 
     /* ================== UI WIRING ================== */
     // Chips
@@ -438,3 +473,4 @@
   </script>
 </body>
 </html>
+

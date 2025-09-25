@@ -243,3 +243,36 @@ button:disabled{ opacity:.65; cursor:not-allowed; }
   * { animation: none !important; transition: none !important; }
   .gif-rail{ display:none !important; }
 }
+/* --- Responsive background dog + bubble placement overrides --- */
+.bg-dog{
+  /* size scales with viewport; never tiny or huge */
+  max-width: clamp(220px, 24vw, 380px);
+  /* anchor near left edge, but keep some breathing room */
+  left: clamp(16px, 6vw, 80px);
+  /* lift the dog so it's visible above the fold */
+  bottom: clamp(8px, 6vh, 40px);
+  opacity: .18;
+}
+
+.bg-bubble{
+  /* sit up and to the right of the dog; responsive too */
+  max-width: clamp(220px, 28vw, 420px);
+  left: calc(clamp(16px, 6vw, 80px) + clamp(180px, 20vw, 320px));
+  bottom: clamp(140px, 22vh, 280px);
+  font-size: clamp(14px, 1.2vw, 18px);
+  opacity: .95;
+}
+
+/* Center the main content a touch tighter on huge screens */
+.wrap{ max-width: min(920px, 92vw); }
+
+/* Small screens: tuck the bubble closer to the dog */
+@media (max-width: 720px){
+  .bg-dog{ max-width: clamp(180px, 34vw, 260px); left: 5vw; bottom: 2vh; }
+  .bg-bubble{
+    left: clamp(140px, 44vw, 56vw);
+    bottom: clamp(120px, 20vh, 220px);
+    max-width: clamp(200px, 56vw, 300px);
+  }
+}
+

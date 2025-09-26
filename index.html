@@ -10,7 +10,7 @@
 </head>
 <body>
 
-  <!-- 👇 GIF rail always visible at the top -->
+  <!-- Top GIF rail (fixed banner) -->
   <section class="gif-rail top-rail" id="gifRail" aria-label="Dog GIFs"></section>
 
   <!-- FUN BACKGROUND LAYER -->
@@ -143,7 +143,7 @@
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
   </main>
 
-  <!-- your existing <script> block with renderGifs(), translate, etc. -->
-  <script src="translate.js"></script>
+  <!-- External JS only (prevents inline-script parsing bugs) -->
+  <script src="/translate.js" defer></script>
 </body>
 </html>

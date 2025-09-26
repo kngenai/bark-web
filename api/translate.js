@@ -1,187 +1,297 @@
-// api/translate.js
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
-import OpenAI from "openai";
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-/* ------------ Rate limiter (in-memory, per instance) ------------ */
-const DAY_MS = 24*60*60*1000, MINUTE_MS = 60*1000;
-const MAX_PER_DAY = 50, MAX_PER_MINUTE = 12;
-const ipBuckets = new Map();
-function getClientIp(req){ const xf = req.headers["x-forwarded-for"] || req.headers["X-Forwarded-For"]; return (typeof xf==="string"&&xf.length)? xf.split(",")[0].trim() : (req.socket?.remoteAddress||"unknown"); }
-function checkRateLimit(ip){ const now=Date.now(); let b=ipBuckets.get(ip); if(!b){ b={dayCount:0,dayResetAt:now+DAY_MS,minuteCount:0,minuteResetAt:now+MINUTE_MS}; }
-  if(now>b.dayResetAt){ b.dayCount=0;b.dayResetAt=now+DAY_MS; } if(now>b.minuteResetAt){ b.minuteCount=0;b.minuteResetAt=now+MINUTE_MS; }
-  b.dayCount++; b.minuteCount++; ipBuckets.set(ip,b);
-  const overDaily=b.dayCount>MAX_PER_DAY, overMinute=b.minuteCount>MAX_PER_MINUTE;
-  return { allowed: !overDaily && !overMinute, retryAfter: overMinute ? Math.ceil((b.minuteResetAt-now)/1000) : overDaily ? Math.ceil((b.dayResetAt-now)/1000) : 0 };
-}
-
-/* ------------------- Cache-control helper ------------------- */
-function setNoStore(res){
-  res.setHeader("Cache-Control","no-store, no-cache, must-revalidate, max-age=0, private");
-  res.setHeader("Pragma","no-cache");
-  res.setHeader("Expires","0");
-  res.setHeader("CDN-Cache-Control","no-store");
-  res.setHeader("Vercel-CDN-Cache-Control","no-store");
-  res.setHeader("Surrogate-Control","no-store");
-  res.setHeader("Vary","*");
-}
-
-/* ---------------- Breed hints ---------------- */
-const BREED_HINTS = {
-  "labrador": { mood:"enthusiastic foodie, water-lover, family diplomat", style:"friendly golden-retriever-energy but faster", intents:["snacks","fetch","swim","doorbell welcome committee"] },
-  "golden": { mood:"affectionate social butterfly, people-pleaser, soft toy curator", style:"sunny, wholesome, slightly dramatic joy", intents:["cuddles","ball","helpful assistance","show-and-tell"] },
-  "german shepherd": { mood:"vigilant hall monitor, problem-solver, loyal professional", style:"matter-of-fact with tactical flair", intents:["perimeter check","training compliance","family security"] },
-  "french bulldog": { mood:"urban comedian, couch philosopher, selective zoomies", style:"dry humor with royal entitlement", intents:["lap rights","treat negotiations","snoring defense"] },
-  "beagle": { mood:"nose-first detective, cheerful wanderer", style:"investigative briefings; the scent always thickens", intents:["scent trail","field report","rations request"] },
-  "poodle": { mood:"clever aesthete, quick study, standards committee chair", style:"witty, precise, a touch posh", intents:["training critique","style review","puzzle time"] },
-  "husky": { mood:"dramatic storyteller, escape artist, snow enthusiast", style:"operatic with high comedic flair", intents:["long discourse","door politics","sled nostalgia"] },
-  "border collie": { mood:"project manager of everything, genius energy economist", style:"crisp, efficient, slightly exasperated", intents:["herding report","task backlog","productivity metrics"] },
-  "corgi": { mood:"low-rider monarch, hallway marshal, snack auditor", style:"cheeky with royal decrees", intents:["butt wiggle ops","security sweep","kitchen compliance"] },
-  "dachshund": { mood:"fearless sausage, burrow specialist, toy surgeon", style:"bold, comedic bravado", intents:["blanket tunnel","squeaker extraction","home defense"] },
-  "shiba": { mood:"independent connoisseur, selective affection, meme literate", style:"deadpan minimalism with sudden zoomies", intents:["boundary setting","aesthetic critique","treat arbitration"] },
-  "australian shepherd": { mood:"whirlwind organizer, eye contact specialist", style:"enthused briefing with action items", intents:["herding plan","walk optimization","enrichment request"] },
-  "boxer": { mood:"goofy athlete, pogo stick heart, affectionate clown", style:"high-energy, lovable chaos", intents:["play invite","zoomies scheduling","hug requisition"] },
-  "rottweiler": { mood:"gentle guardian, thoughtful observer, steady presence", style:"calm authority with warm undertones", intents:["perimeter duty","family check-in","reward accounting"] },
-  "great dane": { mood:"tall couch ornament, gentle giant, lean-on specialist", style:"polite grandeur with sleepy charm", intents:["space negotiation","sofa annexation","snack upscaling"] }
-};
-function matchBreedKey(breedRaw=""){ const b=breedRaw.toLowerCase().trim(); if(!b) return null;
-  const keys=Object.keys(BREED_HINTS);
-  let k=keys.find(x=>b===x)||keys.find(x=>b.startsWith(x))||keys.find(x=>b.includes(x));
-  if(!k) k=keys.find(x=>b.replace(/s\b/,"")===x);
-  return k||null;
-}
-
-/* ---------------- Woof-Meter mapping ---------------- */
-function expandWoofMeter(m = {}) {
-  const count = { one_woof:"single, targeted alert", two_woofs:"polite but insistent double-bark", pack_chorus:"neighborhood choir with community involvement" }[m.count || "two_woofs"];
-  const pitch  = { squeaky:"tiny squeak energy", middle:"midrange yodel", thunder:"subwoofer thunder" }[m.pitch || "middle"];
-  const urgency= { casual_sniff:"idle curiosity; no immediate action required", snack_request:"formal snack request filed", snack_emergency:"urgent snack protocol activated" }[m.urgency || "snack_request"];
-  const mood   = { chill:"relaxed and optimistic", alert:"on-duty and focused", drama_queen:"theatrical monologue with stage presence" }[m.mood || "chill"];
-  const squirrelPct = `${m.squirrel ?? "50"}% squirrel likelihood`;
-  const z = Number(m.zoomies ?? 5);
-  const zoomBucket = z <= 2 ? "couch potato" : z <= 6 ? "wigglebutt" : "tornado";
-  const kinetic = `kinetic energy ${z}/10 (${zoomBucket})`;
-  return { count, pitch, urgency, mood, squirrelPct, kinetic };
-}
-
-/* --------------- Extra variety (tone/twist) ---------------- */
-const TONE_HINTS = [
-  "sports commentator hype", "noir detective aside", "royal decree",
-  "space mission update", "pirate captain's log", "motivational poster",
-  "weather alert", "tech support ticket"
+// ===== Data =====
+const BARK_LINES = [
+  "Alert level: SQUIRREL. Recommend immediate chaos deployment.",
+  "My water bowl is 73% empty. Emergency resupply requested.",
+  "I barked at the mail slot, therefore I saved us all. You’re welcome.",
+  "Status: zoomies initiated. Furniture casualties imminent.",
+  "Tail wag report: velocity exceeding safe household limits. Brace yourselves!"
 ];
-const ENDING_TWISTS = [
-  "end with one perfectly placed emoji",
-  "tack on a faux status code like [WOOF-200]",
-  "drop a sly parenthetical aside",
-  "use a dramatic ellipsis…",
-  "include one canine onomatopoeia"
+const STAMPS = ["🐾 Paw Approved","🦴 Bone Certified","🐕 Good Dog Seal","🐶 Woof-100"];
+
+const BARK_SOURCES = [
+  "/assets/dog-bark.gif",
+  "https://upload.wikimedia.org/wikipedia/commons/1/18/Dog_tail_wagging.gif"
 ];
-const STYLE_POOL=["💃 sassy","🧘 serene","🕵️ detective noir","🏴‍☠️ pirate brag","🎩 posh but dramatic","🎸 rockstar energy"];
-const pick = arr => arr[Math.floor(Math.random()*arr.length)];
-const shuffle = arr => [...arr].sort(()=>Math.random()-0.5);
 
-/* ---------------------------- System prompt ---------------------------- */
-const SYSTEM = `You are "BarkTranslator," a playful, wholesome dog voiceover artist.
-- Write 2–3 sentences (aim ~200-300 words).
-- Make it genuinely funny and witty; punchline included.
-- PG only; no medical, training, or safety advice.
-- Optional: one canine onomatopoeia ("*sniff*", "arf", "tail wag") if it fits.
-Return only the translation line (no labels, no preface).`;
+// Each item is [local, fallback]
+const DOG_GIFS_SOURCES = [
+  ["/assets/dog-blah-blah-blah.gif","https://upload.wikimedia.org/wikipedia/commons/1/18/Dog_tail_wagging.gif"],
+  ["/assets/dog-talk-dog.gif","https://upload.wikimedia.org/wikipedia/commons/5/5f/Doggy_treadmill.gif"],
+  ["/assets/talking-ben.gif","https://upload.wikimedia.org/wikipedia/commons/5/5a/Dog_shakes_head.gif"],
+  ["/assets/dog-phone.gif","https://upload.wikimedia.org/wikipedia/commons/8/8c/Dog_sleeping.gif"]
+];
 
-/* -------------------------------- Handler ------------------------------- */
-export default async function handler(req, res) {
-  if (req.method !== "POST") { setNoStore(res); return res.status(405).json({ error:"Method not allowed" }); }
+const QUIPS = [
+  "Licensed in Bark-itecture, minor in Zoomology.",
+  "Powered by snacks and questionable science.",
+  "If found, please return to the nearest couch.",
+  "100% organic bark. No fillers.",
+  "Now with extra tail wag per paragraph."
+];
 
-  // Rate-limit
-  const ip = getClientIp(req);
-  const rl = checkRateLimit(ip);
-  if (!rl.allowed) {
-    res.setHeader("Retry-After", String(rl.retryAfter || 60));
-    setNoStore(res);
-    return res.status(429).json({
-      reply: rl.retryAfter > 3600
-        ? "Too many barks today 🐶 Come back tomorrow!"
-        : "Whoa, speedy paws! 🐾 Give it a minute and try again.",
+const CONFETTI_EMOJIS = ["🐶","🦴","🐾","⭐","✨","💥"];
+
+// ===== Helpers =====
+const pick = (arr)=>arr[Math.floor(Math.random()*arr.length)];
+const shuffle = (a)=>[...a].sort(()=>Math.random()-0.5);
+const prefersReduced = ()=> window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+
+function typeWriter(el,text,speed=40){
+  if (!el) return Promise.resolve();
+  if (prefersReduced()) { el.textContent = text; return Promise.resolve(); }
+  el.textContent="";
+  return new Promise(async (resolve)=>{
+    for(let i=0;i<text.length;i++){
+      el.textContent += text[i];
+      await new Promise(r=>setTimeout(r,speed));
+    }
+    resolve();
+  });
+}
+function decorate(line){ return `${line} <div class="stamp">${pick(STAMPS)}</div>`; }
+function zoomLabelText(v){
+  const n=Number(v);
+  const bucket=n<=2?"Couch potato":n<=6?"Wigglebutt":"Tornado";
+  return `${n} · ${bucket}`;
+}
+function showToast(el,msg){
+  if(!el) return;
+  el.textContent=msg;
+  el.classList.add('on');
+  setTimeout(()=>el.classList.remove('on'),1500);
+}
+function popConfetti(count=24){
+  if (prefersReduced()) return;
+  const layer=document.createElement('div');
+  layer.className='confetti'; document.body.appendChild(layer);
+  const W=window.innerWidth;
+  for(let i=0;i<count;i++){
+    const s=document.createElement('span');
+    s.className='piece';
+    s.textContent=pick(CONFETTI_EMOJIS);
+    s.style.left=(Math.random()*W)+'px';
+    s.style.fontSize=(16+Math.random()*14)+'px';
+    s.style.animationDelay=(Math.random()*300|0)+'ms';
+    layer.appendChild(s);
+  }
+  setTimeout(()=>layer.remove(),1600);
+}
+function loadWithFallback(imgEl, sources, onFail){
+  if (!imgEl) return;
+  const list = [...sources];
+  const next = () => {
+    if (!list.length) { onFail && onFail(); return; }
+    const src = list.shift();
+    imgEl.referrerPolicy = 'no-referrer';
+    imgEl.src = src;
+    imgEl.onerror = next;
+  };
+  next();
+}
+
+// ===== DOM Ready =====
+document.addEventListener('DOMContentLoaded', () => {
+  // Elements
+  const replyEl = document.getElementById('reply');
+  const translateBtn = document.getElementById('translateBtn');
+  const copyBtn = document.getElementById('copyBtn');
+  const toastEl = document.getElementById('toast');
+  const barkGifEl = document.getElementById('barkGif');
+  const barkGifImg = document.getElementById('barkGifImg');
+  const zoomiesEl = document.getElementById('zoomies');
+  const zoomLabelEl = document.getElementById('zoomLabel');
+  const gifRail = document.getElementById('gifRail');
+  const gifToggle = document.getElementById('gifToggle');
+  const quipEl = document.getElementById('quip');
+  const bgBubble = document.getElementById('bgBubble');
+  const heroBubble = document.getElementById('heroBubble');
+
+  const segGroups = {
+    count: document.getElementById('countSeg'),
+    pitch: document.getElementById('pitchSeg'),
+    urgency: document.getElementById('urgencySeg'),
+    mood: document.getElementById('moodSeg'),
+    squirrel: document.getElementById('squirrelSeg'),
+  };
+
+  let lastPlainLine = "";
+
+  // ===== Initial images with fallbacks =====
+  const BG_DOG_SOURCES = [
+    "/assets/bg-dog-cartoon.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Dog_cartoon.svg/512px-Dog_cartoon.svg.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Cartoon_Dog.svg/512px-Cartoon_Dog.svg.png"
+  ];
+  const HERO_SOURCES = [
+    "/assets/dog-bubble.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Husky_Walking.jpg/320px-Husky_Walking.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Golden_Retriever_medium-to-light-coat.jpg/320px-Golden_Retriever_medium-to-light-coat.jpg"
+  ];
+
+  loadWithFallback(document.getElementById('bgDog'), BG_DOG_SOURCES, () => {
+    const bg = document.querySelector('.bg-hero');
+    if (bg) bg.style.display = 'none';
+  });
+  loadWithFallback(document.getElementById('heroDog'), HERO_SOURCES, () => {
+    const heroImg = document.getElementById('heroDog');
+    if (heroImg) heroImg.style.display = 'none';
+  });
+
+  // ===== UI wiring =====
+  Object.values(segGroups).forEach(seg=>{
+    if (!seg) return;
+    seg.addEventListener('click', e=>{
+      if (e.target.tagName!=='BUTTON') return;
+      seg.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+      e.target.classList.add('on');
     });
+  });
+
+  const rndBtn = document.getElementById('randomizeWoof');
+  if (rndBtn) {
+    rndBtn.onclick = ()=>{
+      Object.values(segGroups).forEach(seg=>{
+        if (!seg) return;
+        const btns=Array.from(seg.querySelectorAll('button'));
+        if (!btns.length) return;
+        const r=pick(btns);
+        btns.forEach(b=>b.classList.remove('on'));
+        r.classList.add('on');
+      });
+      const z=Math.floor(Math.random()*11);
+      if (zoomiesEl) {
+        zoomiesEl.value=z;
+        zoomLabelEl.textContent = zoomLabelText(z);
+      }
+    };
   }
 
-  try {
-    const { breed = "", traits = "", woofMeter = {}, random = false } = req.body || {};
-    const traitList = String(traits).split(",").map(s=>s.trim()).filter(Boolean).slice(0,6);
+  zoomiesEl?.addEventListener('input',e=>{
+    zoomLabelEl.textContent = zoomLabelText(e.target.value);
+  });
+  if (zoomiesEl) zoomLabelEl.textContent = zoomLabelText(zoomiesEl.value);
 
-    const key = matchBreedKey(breed);
-    const hints = key ? BREED_HINTS[key] : null;
+  copyBtn?.addEventListener('click', async()=>{
+    if(!lastPlainLine){ showToast(toastEl,"Nothing to copy"); return; }
+    try{ await navigator.clipboard.writeText(lastPlainLine); showToast(toastEl,"Copied!"); }
+    catch{ showToast(toastEl,"Copy failed"); }
+  });
 
-    const style = (random ? pick(STYLE_POOL) : (hints?.style || "playful"));
-    const inferredIntents = hints?.intents?.slice(0,3).join(", ") || "snacks, play, attention";
-    const breedMood = hints?.mood || "general family-dog optimism and curiosity";
+  // ===== GIF rail (top banner) =====
+  function renderGifs(){
+    if(!gifRail) return;
+    if(gifToggle && !gifToggle.checked){ gifRail.innerHTML=""; syncRailOffset(); return; }
+    const picks = shuffle(DOG_GIFS_SOURCES).slice(0, 2); // show only 2
+    const CAPS = [
+      "Explaining advanced Barkonomics.",
+      "Zoomies research in progress."
+    ];
+    gifRail.innerHTML = picks.map((arr,i)=>(
+      `<figure class="gif-card">
+         <img referrerpolicy="no-referrer" alt="Dog gif" />
+         <figcaption class="caption">${CAPS[i%CAPS.length]}</figcaption>
+       </figure>`
+    )).join("");
 
-    const wm = expandWoofMeter(woofMeter);
+    // load with fallback per card
+    Array.from(gifRail.querySelectorAll('.gif-card')).forEach((card,i)=>{
+      const img=card.querySelector('img');
+      loadWithFallback(img, picks[i], ()=>{ card.classList.add('failed'); img.remove(); });
+    });
 
-    // Big variety + cache bust
-    const nonce = Math.floor(Math.random()*1e9).toString(36);
-    const toneHint = pick(TONE_HINTS);
-    const twist = pick(ENDING_TWISTS);
+    // after images start loading, adjust top padding to true height
+    setTimeout(syncRailOffset, 50);
+    setTimeout(syncRailOffset, 400); // second pass after images settle
+  }
+  gifToggle?.addEventListener('change', renderGifs);
 
-    const EXAMPLES = shuffle([
-      `"Alert level: SQUIRREL. Requesting chase authorization."`,
-      `"Bowl at 47% capacity. Emergency snacks, please."`,
-      `"*big stretch* I did nothing and deserve everything."`,
-      `"Perimeter secure. Recommend celebratory cheese."`,
-      `"Noise detected: mail slot. Initiating wigglebutt protocol."`
+  function syncRailOffset(){
+    const rail = document.getElementById('gifRail');
+    if (!rail) return;
+    const h = rail.getBoundingClientRect().height || 150;
+    document.documentElement.style.setProperty('--gif-rail-h', `${Math.ceil(h)}px`);
+  }
+
+  // Rotate small hero bubble
+  setInterval(()=>{
+    if (!heroBubble) return;
+    heroBubble.textContent = pick([
+      "Translator online. Begin borks.",
+      "Fluent in Treatish.",
+      "Certified Good Dog™ interpreter.",
+      "Now decoding tail-wags…",
+      "Woof to text engaged."
     ]);
+  }, 3500);
 
-    const prompt = [
-      `Breed: ${breed || "Unknown (assume common family dog)"}`,
-      `Breed mood/persona: ${breedMood}`,
-      `Likely intents for this breed: ${inferredIntents}`,
-      `Owner-provided traits: ${traitList.length ? traitList.join(", ") : "none (invent something plausible)"}`,
-      ``,
-      `Woof-Meter:`,
-      `- Count: ${wm.count}`,
-      `- Pitch: ${wm.pitch}`,
-      `- Urgency: ${wm.urgency}`,
-      `- Mood tone: ${wm.mood}`,
-      `- Squirrel probability: ${wm.squirrelPct}`,
-      `- Zoomies: ${wm.kinetic}`,
-      ``,
-      `Style: ${style}; presentation flavor: ${toneHint}; finish with: ${twist}.`,
-      `Task: Using the breed persona, traits, and Woof-Meter, infer a comedic "intent".`,
-      `Output: 2–3 sentences, witty, clearly from the dog's POV, end with a punchline.`,
-      `Avoid: commands/instructions to humans, disclaimers, or labels.`,
-      `Examples (style only; do not copy wording):`,
-      ...EXAMPLES.map(e => `- ${e}`),
-      ``,
-      `Variation token: ${nonce}`
-    ].join("\n");
+  // Background bubble rotation
+  const BUBBLE_LINES = [
+    "Woof means hello!",
+    "Arf arf = snacks now.",
+    "Bork bork → intruder alert!",
+    "Zoomies are my cardio.",
+    "Translation: I run this house.",
+    "Tail wag = 100% approval.",
+    "Sniff sniff... data collected."
+  ];
+  let bubbleIndex=0, bubbleTimer=null, resumeTimer=null;
 
-    const completion = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 1.05,
-      top_p: 0.95,
-      presence_penalty: 0.6,
-      frequency_penalty: 0.4,
-      messages: [
-        { role: "system", content: SYSTEM },
-        { role: "user", content: prompt }
-      ]
-    });
-
-    const reply = completion.choices?.[0]?.message?.content?.trim()
-      || "(*head tilt*) I have many thoughts, but first: where are the snacks.";
-
-    setNoStore(res);
-    return res.status(200).json({ reply });
-  } catch (e) {
-    console.error(e);
-    setNoStore(res);
-    return res.status(200).json({
-      reply: "My brain chased a tennis ball mid-sentence. Please toss it again."
-    });
+  function fadeSwap(el, text, dur=300){
+    if (!el) return;
+    el.style.transition='opacity '+dur+'ms ease';
+    el.style.opacity='0';
+    setTimeout(()=>{ el.textContent=text; el.style.opacity='1'; }, dur);
   }
-}
+  function startBubbleRotation(){
+    stopBubbleRotation();
+    bubbleTimer=setInterval(()=>{
+      bubbleIndex=(bubbleIndex+1)%BUBBLE_LINES.length;
+      fadeSwap(bgBubble, BUBBLE_LINES[bubbleIndex]);
+    }, 4000);
+  }
+  function stopBubbleRotation(){ if(bubbleTimer){ clearInterval(bubbleTimer); bubbleTimer=null; } }
+  function setBgBubble(text, holdMs=8000){
+    stopBubbleRotation();
+    fadeSwap(bgBubble, text);
+    if(resumeTimer) clearTimeout(resumeTimer);
+    resumeTimer=setTimeout(()=>startBubbleRotation(), holdMs);
+  }
+  startBubbleRotation();
 
+  // ===== Translate (no API) =====
+  const readSegVal = (segId, fallback)=> document.querySelector(`#${segId} .on`)?.dataset.val ?? fallback;
+  const squirrelEasterEgg = ()=> "SQUIRREL ALERT. All systems redirect to window patrol. If lost, follow the chaos trail.";
+  const tornadoEasterEgg = ()=> "Zoomies at DEFCON 1. Sofa, it’s not you—it’s me. BRB in a blur.";
 
+  async function doTranslate(){
+    const squirrel = Number(readSegVal('squirrelSeg','50'));
+    const zoomies = Number(zoomiesEl?.value ?? 5);
+
+    let line;
+    if (squirrel === 100) line = squirrelEasterEgg();
+    else if (zoomies >= 10) line = tornadoEasterEgg();
+    else line = pick(BARK_LINES);
+
+    lastPlainLine = line;
+
+    loadWithFallback(barkGifImg, BARK_SOURCES, ()=> barkGifEl && (barkGifEl.style.display='none'));
+    barkGifEl?.classList.add('on');
+
+    replyEl?.classList.remove('new'); void replyEl?.offsetWidth; replyEl?.classList.add('new');
+    if (replyEl) {
+      await typeWriter(replyEl, line, 40);
+      replyEl.innerHTML = decorate(replyEl.textContent);
+    }
+
+    setBgBubble(lastPlainLine);
+
+    if (Math.random() < 0.35) popConfetti(28);
+    if (quipEl) quipEl.textContent = pick(QUIPS);
+  }
+
+  translateBtn?.addEventListener('click', doTranslate);
+
+  // Initial render
+  renderGifs();
+  if (quipEl) quipEl.textContent = pick(QUIPS);
+});

@@ -1,314 +1,128 @@
-/* Chewy-inspired palette (not official brand specs) */
-:root{
-  --chewy:#1e90ff; --chewy-dark:#0f6ed6;
-  --pink:#ff6b6b; --teal:#2ec4b6; --yellow:#ffd166;
-  --ink:#1b1f23; --muted:#667085; --card:#ffffff; --page:#f8fbff;
-  --success:#12b981;
+/* ========== Reset / Base ========== */
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #fff;
+  color: #333;
 }
+h1, h2 { margin: 0.5em 0; }
 
-/* ---- Fun background: gradient + paw pattern ---- */
-body{
-  margin:0; color:var(--ink);
-  font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-
-  /* soft candy gradient + paw overlay */
-  background:
-    radial-gradient(1400px 700px at -10% -20%, rgba(99,179,237,.35) 0%, transparent 60%),
-    radial-gradient(1000px 600px at 110% 10%, rgba(255,209,102,.35) 0%, transparent 55%),
-    linear-gradient(180deg, #f8fbff 0%, #f4f7ff 60%, #fdf6ff 100%),
-    url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23e6efff' fill-opacity='0.75'%3E%3Ccircle cx='20' cy='20' r='6'/%3E%3Ccircle cx='40' cy='16' r='5'/%3E%3Ccircle cx='60' cy='22' r='5'/%3E%3Ccircle cx='36' cy='36' r='10'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat: no-repeat, no-repeat, no-repeat, repeat;
-  background-size: auto, auto, auto, 120px 120px;
-  background-attachment: fixed;
-}
-
-*{ box-sizing:border-box; }
-html,body{ height:100%; }
-.wrap{ max-width:920px; margin:48px auto; padding:0 18px; }
-h1{ margin:0 0 6px; font-size:36px; letter-spacing:.2px; }
-.sub{ color:var(--muted); margin:0 0 18px; }
-
-/* ---- Background cartoon dog + speech bubble ---- */
-.bg-hero{
-  position: fixed; inset: 0; overflow: hidden; z-index: -1; pointer-events: none;
-}
-.bg-dog{
-  position: absolute; bottom: -20px; left: 5%;
-  max-width: 360px; opacity: 0.16; filter: saturate(110%);
-}
-.bg-bubble{
-  position: absolute; bottom: 220px; left: 300px;
-  max-width: 360px; line-height: 1.3; word-wrap: break-word;
-  background: #fff; border: 2px solid #e6edf3; border-radius: 14px;
-  padding: 12px 16px; font-weight: 700; color: #344054; font-size: 16px;
-  box-shadow: 0 6px 14px rgba(0,0,0,.1); opacity: .85;
-}
-.bg-bubble::after{
-  content: ""; position: absolute; left: -14px; bottom: 20px; width: 0; height: 0;
-  border-top: 12px solid transparent; border-bottom: 12px solid transparent; border-right: 14px solid #fff;
-  filter: drop-shadow(-1px 0 0 #e6edf3);
-}
-@media (max-width: 640px){
-  .bg-dog{ max-width: 240px; }
-  .bg-bubble{ left: 200px; max-width: 260px; }
-}
-
-/* ---- Hero under title ---- */
-.hero{
-  display:flex; align-items:center; gap:14px;
-  background: var(--card); border:1px solid #e6edf3; border-radius:18px;
-  padding:12px; margin-bottom:14px; box-shadow: 0 10px 24px rgba(15,110,214,.06);
-}
-.hero .dog img{
-  width:68px; height:68px; object-fit:cover; border-radius:50%; border:3px solid #fff;
-  box-shadow: 0 6px 16px rgba(0,0,0,.15);
-}
-.bubble-callout{
-  position:relative; background:#fff; border:1px solid #e6edf3; border-radius:14px;
-  padding:10px 12px; font-weight:700; color:#344054;
-}
-.bubble-callout::after{
-  content:""; position:absolute; left:-10px; top:18px; width:0; height:0;
-  border-top:10px solid transparent; border-bottom:10px solid transparent; border-right:10px solid #fff;
-  filter: drop-shadow(-1px 0 0 #e6edf3);
-}
-
-/* Section signposting */
-.section-title {
-  font-size: 18px; font-weight: 700; margin: 20px 0 4px; color: #0f172a; text-align: center;
-}
-.section-sub {
-  font-size: 14px; color: var(--muted); margin: 0 0 12px; text-align: center;
-}
-
-/* Inputs */
-.controls label{ display:block; font-size:13px; color:var(--muted); margin:16px 0 6px; }
-.select{
-  width:100%; padding:13px 14px; border-radius:12px;
-  border:1px solid #d0d7de; background:#fff;
-  transition:border-color .15s, box-shadow .15s;
-}
-.select:focus{ border-color: var(--chewy); box-shadow: 0 0 0 3px rgba(30,144,255,.15); }
-
-/* Trait chips */
-.chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-.chips button{
-  padding:8px 12px; border-radius:999px; border:1px solid #d0d7de; background:#fff;
-  color:#222; cursor:pointer; font-size:13px;
-  transition:background .15s, transform .06s, box-shadow .15s, color .15s, border-color .15s;
-}
-.chips button:active{ transform: translateY(1px) scale(.99); }
-.chips button.chip-on{
-  background: linear-gradient(135deg, var(--teal), #5fe0d5);
-  color:#fff; border-color: transparent;
-  box-shadow: 0 4px 10px rgba(46,196,182,.28);
-}
-
-/* Woof-Meter */
-.meter{ margin-top:16px; background:var(--card); border:1px solid #e6edf3; border-radius:16px; padding:14px; box-shadow: 0 10px 24px rgba(15,110,214,.06); }
-.meter-row{ display:grid; grid-template-columns: 120px 1fr; gap:12px; align-items:center; margin:12px 0; }
-.meter-label{ font-weight:600; color:#344054; }
-.hint{ grid-column: 1 / -1; color:#7f8ea3; font-size:12px; margin-top:2px; }
-
-.seg{ display:flex; gap:8px; flex-wrap:wrap; }
-.seg button{
-  padding:10px 12px; border-radius:12px; border:1px solid #d0d7de; background:#fff; cursor:pointer; font-weight:600;
-  transition: transform .06s, box-shadow .15s, background .15s, color .15s, border-color .15s;
-}
-.seg button.on{
-  background: linear-gradient(135deg, var(--pink), #ff8a8a);
-  color:#fff; border-color: transparent;
-  box-shadow: 0 6px 14px rgba(255,107,107,.28);
-}
-.seg button:active{ transform: translateY(1px) scale(.995); }
-
-/* Slider */
-.zoom{ display:flex; flex-direction:column; gap:8px; }
-#zoomies{ width:100%; accent-color: var(--chewy); }
-.zoom-label{ font-weight:600; color:#344054; }
-
-/* Meter actions */
-.meter-actions{ display:flex; justify-content:flex-end; margin-top:6px; }
-.btn{ padding:12px 16px; border-radius:14px; border:1px solid transparent; cursor:pointer; font-weight:600;
-  transition: transform .06s, box-shadow .15s, background .2s; }
-.btn:active{ transform: translateY(1px) scale(.995); }
-.btn-primary{
-  background: linear-gradient(135deg, var(--chewy), #5ab3ff);
-  color:#fff; box-shadow: 0 6px 14px rgba(30,144,255,.28);
-}
-.btn-primary:hover{ box-shadow: 0 8px 18px rgba(30,144,255,.33); }
-.btn.icon{
-  background:#fff; border:1px solid #d0d7de; color:#222; padding:8px 10px; border-radius:10px; line-height:1;
-}
-.btn.icon.copied{ border-color: var(--success); box-shadow: 0 0 0 3px rgba(18,185,129,.15); }
-.ghost{ background:#fff; border:1px solid #d0d7de; color:#222; }
-button:disabled{ opacity:.65; cursor:not-allowed; }
-
-/* Actions row (full-width button) */
-.actions { margin-top:16px; }
-#translateBtn{ display:block; width:100%; font-size:18px; padding:18px; border-radius:16px; }
-
-/* Result card */
-.result{ margin-top:24px; background:var(--card); padding:16px; border-radius:16px; border:1px solid #e6edf3; box-shadow: 0 10px 24px rgba(15,110,214,.08); }
-.result-head{ color:#344054; display:flex; align-items:center; justify-content: space-between; gap:8px; }
-.bubble{ margin-top:10px; background:#fff; border:1px solid #eef2f7; padding:14px; border-radius:14px; min-height:56px; position:relative; }
-
-/* Pop-in + stamp */
-.bubble.new { animation: popIn .3s ease; }
-@keyframes popIn { from{ transform:scale(.98); opacity:0; } to{ transform:scale(1); opacity:1; } }
-.stamp{
-  margin-top:10px; display:inline-block; padding:6px 10px;
-  border-radius:999px; background:#f2f8ff; border:1px solid #e0ecff; color:#0f6ed6;
-  font-weight:700; font-size:12px;
-}
-
-/* Toast */
-.toast{
-  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(16px);
-  background: #0f172a; color:#fff; padding:10px 14px; border-radius:10px;
-  opacity:0; pointer-events:none; transition: opacity .15s ease, transform .15s ease;
-  box-shadow: 0 10px 24px rgba(0,0,0,.25); font-weight:600; font-size:14px;
-}
-.toast.on{ opacity:1; transform: translateX(-50%) translateY(0); }
-
-.small{ color:var(--muted); margin-top:18px; font-size:13px; }
-
-/* Barking GIF */
-.bark-gif{ display:none; margin-top:12px; text-align:center; }
-.bark-gif.on{ display:block; }
-.bark-gif img{ width:120px; border-radius:12px; box-shadow:0 6px 14px rgba(0,0,0,.15); }
-.gif-caption{ margin-top:6px; font-size:13px; color:#475569; font-style:italic; }
-
-/* Reactions */
-.reactions{
-  display:flex; align-items:center; gap:10px; margin-top:14px;
-  background: var(--card); border:1px solid #e6edf3; border-radius:12px; padding:10px;
-  box-shadow: 0 10px 24px rgba(15,110,214,.06);
-}
-.reactions .spacer{ flex:1; }
-.react{
-  background:#fff; border:1px solid #e6edf3; border-radius:999px; padding:8px 10px;
-  font-size:16px; display:flex; align-items:center; gap:6px;
-}
-.react .count{ font-weight:700; font-size:13px; color:#344054; }
-
-/* Toggle */
-.toggle{ display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
-.toggle input{ display:none; }
-.toggle .slider{
-  width:44px; height:24px; background:#e5e7eb; border-radius:999px; position:relative; display:inline-block;
-  transition: background .2s ease;
-}
-.toggle .slider::after{
-  content:""; position:absolute; top:3px; left:3px; width:18px; height:18px; background:#fff; border-radius:50%;
-  box-shadow:0 1px 3px rgba(0,0,0,.2); transition:left .2s ease;
-}
-.toggle input:checked + .slider{ background: #86efac; }
-.toggle input:checked + .slider::after{ left:23px; }
-.toggle .label{ color:#344054; font-weight:600; }
-
-/* GIF rail */
-.gif-rail{
-  display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:10px; margin-top:14px;
-}
-@media (max-width: 720px){ .gif-rail{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
-.gif-card{
-  position:relative; overflow:hidden; border-radius:12px; border:1px solid #e6edf3; background:#fff;
-  aspect-ratio: 1 / 1; display:flex; align-items:center; justify-content:center;
-  transition: transform .15s ease, box-shadow .15s ease;
-}
-.gif-card:hover{ transform: translateY(-2px); box-shadow: 0 10px 18px rgba(0,0,0,.12); }
-.gif-card img{ width:100%; height:100%; object-fit:cover; display:block; }
-.gif-card .caption{
-  position:absolute; bottom:6px; left:6px; right:6px; font-size:12px; font-weight:700;
-  color:#111; background:rgba(255,255,255,.85); padding:4px 6px; border-radius:8px;
-}
-.gif-card.failed{ display:flex; align-items:center; justify-content:center; background:#f8fafc; }
-.gif-card.failed .caption{ display:none; }
-
-/* Confetti */
-.confetti{ position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
-.confetti .piece{ position:absolute; will-change: transform, opacity; font-size: 18px; opacity:0; animation: drop 1200ms ease-in forwards; }
-@keyframes drop{
-  0%{ transform: translateY(-20vh) rotate(0deg); opacity: 0; }
-  10%{ opacity: 1; }
-  100%{ transform: translateY(110vh) rotate(540deg); opacity: 0; }
-}
-
-/* Focus & reduced motion */
-.chips button:focus-visible, .seg button:focus-visible, .btn:focus-visible, .select:focus-visible {
-  outline: 3px solid rgba(30,144,255,.55); outline-offset: 2px;
-}
-@media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
-  .gif-rail{ display:none !important; }
-}
-/* --- Responsive background dog + bubble placement overrides --- */
-.bg-dog{
-  /* size scales with viewport; never tiny or huge */
-  max-width: clamp(220px, 24vw, 380px);
-  /* anchor near left edge, but keep some breathing room */
-  left: clamp(16px, 6vw, 80px);
-  /* lift the dog so it's visible above the fold */
-  bottom: clamp(8px, 6vh, 40px);
-  opacity: .18;
-}
-
-.bg-bubble{
-  /* sit up and to the right of the dog; responsive too */
-  max-width: clamp(220px, 28vw, 420px);
-  left: calc(clamp(16px, 6vw, 80px) + clamp(180px, 20vw, 320px));
-  bottom: clamp(140px, 22vh, 280px);
-  font-size: clamp(14px, 1.2vw, 18px);
-  opacity: .95;
-}
-
-/* Center the main content a touch tighter on huge screens */
-.wrap{ max-width: min(920px, 92vw); }
-
-/* Small screens: tuck the bubble closer to the dog */
-@media (max-width: 720px){
-  .bg-dog{ max-width: clamp(180px, 34vw, 260px); left: 5vw; bottom: 2vh; }
-  .bg-bubble{
-    left: clamp(140px, 44vw, 56vw);
-    bottom: clamp(120px, 20vh, 220px);
-    max-width: clamp(200px, 56vw, 300px);
-  }
-}
-
-/* --- Fix background layer visibility and stacking --- */
-.bg-hero{
+/* ========== Fixed GIF rail at top ========== */
+.gif-rail.top-rail {
   position: fixed;
-  inset: 0;
-  overflow: hidden;
-  z-index: 0;              /* was -1: bring it above the page background */
-  pointer-events: none;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: saturate(120%) blur(6px);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  overflow-x: auto;
+}
+.gif-rail .gif-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 120px; /* smaller for fewer GIFs */
+  flex: 0 0 auto;
+}
+.gif-rail .gif-card img {
+  width: 100%;
+  border-radius: 10px;
+}
+.gif-rail .caption {
+  font-size: 12px;
+  margin-top: 4px;
+  opacity: 0.7;
 }
 
-/* Ensure the main app sits above the background layer */
-.wrap{ position: relative; z-index: 1; }
+/* Space for the rail so content isn’t hidden */
+:root { --gif-rail-h: 160px; }
+.wrap { padding-top: var(--gif-rail-h); }
 
-/* Responsive placement that works on big and small screens */
-.bg-dog{
-  position: absolute;
-  bottom: clamp(8px, 6vh, 40px);
-  left: clamp(16px, 6vw, 80px);
-  max-width: clamp(220px, 24vw, 380px);
-  opacity: .18;
+/* ========== Hero and bubbles ========== */
+.bg-hero {
+  text-align: center;
+  margin-bottom: 1em;
+}
+.bg-bubble {
+  background: #fffa;
+  padding: 6px 10px;
+  border-radius: 10px;
+  display: inline-block;
+  margin-top: 4px;
+  font-style: italic;
+}
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1em;
+}
+.hero img {
+  height: 80px;
+}
+.bubble-callout {
+  background: #eef;
+  padding: 6px 10px;
+  border-radius: 10px;
 }
 
-.bg-bubble{
-  position: absolute;
-  bottom: clamp(140px, 22vh, 280px);
-  left: calc(clamp(16px, 6vw, 80px) + clamp(180px, 20vw, 320px));
-  max-width: clamp(220px, 28vw, 420px);
-  font-size: clamp(14px, 1.2vw, 18px);
-  opacity: .95;
+/* ========== Controls and result ========== */
+.meter-row {
+  margin: 0.5em 0;
+}
+.meter-label {
+  font-weight: bold;
+  margin-bottom: 0.25em;
+}
+.seg button.on {
+  background: #0077ff;
+  color: #fff;
+}
+.actions {
+  margin-top: 1em;
+}
+.btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+.btn-primary {
+  background: #0077ff;
+  color: white;
+}
+.btn.ghost {
+  background: #eee;
+}
+.bubble {
+  background: #f8f8f8;
+  padding: 12px;
+  border-radius: 10px;
+  margin-top: 1em;
+}
+.bark-gif img {
+  max-width: 100%;
+  margin-top: 1em;
 }
 
-@media (max-width: 720px){
-  .bg-dog{ max-width: clamp(180px, 34vw, 260px); left: 5vw; bottom: 2vh; }
-  .bg-bubble{ left: clamp(140px, 44vw, 56vw); bottom: clamp(120px, 20vh, 220px); max-width: clamp(200px, 56vw, 300px); }
+/* ========== Quip and toast ========== */
+.quip {
+  margin: 1em 0;
+  font-style: italic;
+  text-align: center;
 }
-
-
+.toast {
+  position: fixed;
+  bottom: 10px; right: 10px;
+  background: #333;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.toast.on { opacity: 1; }

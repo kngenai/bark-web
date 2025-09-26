@@ -7,6 +7,15 @@
   <meta name="description" content="A playful dog bark translator tailored to breed, traits, and your Woof-Meter." />
   <meta name="referrer" content="no-referrer" />
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* tiny inline helpers for visibility */
+    #_err {
+      position: fixed; inset: auto 12px 12px 12px; background:#fee;
+      color:#900; border:1px solid #f99; padding:10px 12px; font:12px/1.4 system-ui, sans-serif;
+      border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,.08); display:none; z-index:9999;
+      max-height:40vh; overflow:auto; white-space:pre-wrap;
+    }
+  </style>
 </head>
 <body>
 
@@ -55,19 +64,10 @@
         <option>Great Dane</option>
       </select>
 
-      <!-- Traits (commented out is fine now) 
+      <!-- Traits (commented out – OK)
       <label>Personality (tap a few)</label>
       <div class="chips" id="traitChips" role="group" aria-label="Personality traits">
-        <button data-trait="goofy">goofy</button>
-        <button data-trait="food-motivated">food-motivated</button>
-        <button data-trait="squirrel-obsessed">squirrel-obsessed</button>
-        <button data-trait="clingy">clingy</button>
-        <button data-trait="zoomies">zoomies</button>
-        <button data-trait="water-lover">water-lover</button>
-        <button data-trait="guard dog vibes">guard dog vibes</button>
-        <button data-trait="dramatic talker">dramatic talker</button>
-        <button data-trait="nose-driven">nose-driven</button>
-        <button data-trait="cuddle bug">cuddle bug</button>
+        ...
       </div>
       -->
 
@@ -132,7 +132,7 @@
       </div>
       <div id="reply" class="bubble">—</div>
 
-      <!-- Barking GIF (kept visible after translation) -->
+      <!-- Barking GIF -->
       <div id="barkGif" class="bark-gif">
         <img id="barkGifImg" alt="Dog barking" referrerpolicy="no-referrer" />
         <p class="gif-caption">Dog is “speaking” the translation…</p>
@@ -155,11 +155,23 @@
     <section class="gif-rail" id="gifRail" aria-label="Dog GIFs"></section>
     <p id="quip" class="quip">Licensed in Bark-itecture, minor in Zoomology.</p>
 
+    <div id="_err" role="alert"></div>
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
   </main>
 
-  <!-- SINGLE, PROPERLY CLOSED SCRIPT TAG -->
   <script>
+  // ========== ERROR OVERLAY ==========
+  (function(){
+    const box = document.getElementById('_err');
+    function show(msg){
+      box.textContent = String(msg);
+      box.style.display = 'block';
+    }
+    window.addEventListener('error', e => show(e.message + (e.filename? `\n${e.filename}:${e.lineno}:${e.colno}`:'')));
+    window.addEventListener('unhandledrejection', e => show('Promise rejection: ' + (e.reason && e.reason.message ? e.reason.message : e.reason)));
+  })();
+
+  document.addEventListener('DOMContentLoaded', () => {
     /* ================== DATA ================== */
     const BARK_LINES = [
       "Alert level: SQUIRREL. Recommend immediate chaos deployment.",
@@ -197,7 +209,7 @@
     const barkGifImg = document.getElementById('barkGifImg');
     const zoomiesEl = document.getElementById('zoomies');
     const zoomLabelEl = document.getElementById('zoomLabel');
-    const chipsEl = document.getElementById('traitChips');
+    const chipsEl = document.getElementById('traitChips'); // may be null
     const gifRail = document.getElementById('gifRail');
     const gifToggle = document.getElementById('gifToggle');
     const quipEl = document.getElementById('quip');
@@ -258,6 +270,7 @@
       setTimeout(()=>layer.remove(),1600);
     }
     function loadWithFallback(imgEl, sources, onFail){
+      if (!imgEl) return;
       const list = [...sources];
       const tryNext = () => {
         if (!list.length) { onFail && onFail(); return; }
@@ -276,62 +289,64 @@
       "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Cartoon_Dog.svg/512px-Cartoon_Dog.svg.png"
     ];
     const HERO_SOURCES = [
-      "/assets/dog-bubble.png",  /* your working file */
+      "/assets/dog-bubble.png",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Husky_Walking.jpg/320px-Husky_Walking.jpg",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Golden_Retriever_medium-to-light-coat.jpg/320px-Golden_Retriever_medium-to-light-coat.jpg"
     ];
 
-    const bgDog  = document.getElementById('bgDog');
-    const heroDog = document.getElementById('heroDog');
-
-    loadWithFallback(bgDog, BG_DOG_SOURCES, () => {
+    loadWithFallback(document.getElementById('bgDog'), BG_DOG_SOURCES, () => {
       const bg = document.querySelector('.bg-hero');
       if (bg) bg.style.display = 'none';
     });
-
-    loadWithFallback(heroDog, HERO_SOURCES, () => {
-      if (heroDog) heroDog.style.display = 'none';
+    loadWithFallback(document.getElementById('heroDog'), HERO_SOURCES, () => {
+      const heroImg = document.getElementById('heroDog');
+      if (heroImg) heroImg.style.display = 'none';
     });
 
     /* ================== UI WIRING ================== */
-    // Traits may be commented out; guard this:
     if (chipsEl) {
       chipsEl.addEventListener('click', (e)=>{
-        if (e.target.tagName!=='BUTTON') return;
+        if (e.target.tagName !== 'BUTTON') return;
         e.target.classList.toggle('chip-on');
       });
     }
 
     Object.values(segGroups).forEach(seg=>{
+      if (!seg) return;
       seg.addEventListener('click', e=>{
-        if (e.target.tagName!=='BUTTON') return;
+        if (e.target.tagName !== 'BUTTON') return;
         seg.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
         e.target.classList.add('on');
       });
     });
 
-    document.getElementById('randomizeWoof').onclick=()=>{
-      Object.values(segGroups).forEach(seg=>{
-        const btns=Array.from(seg.querySelectorAll('button'));
-        const r=pick(btns);
-        btns.forEach(b=>b.classList.remove('on'));
-        r.classList.add('on');
-      });
-      const z=Math.floor(Math.random()*11);
-      zoomiesEl.value=z; zoomLabel(z);
-    };
+    const rndBtn = document.getElementById('randomizeWoof');
+    if (rndBtn) {
+      rndBtn.onclick = ()=>{
+        Object.values(segGroups).forEach(seg=>{
+          if (!seg) return;
+          const btns=Array.from(seg.querySelectorAll('button'));
+          if (!btns.length) return;
+          const r=pick(btns);
+          btns.forEach(b=>b.classList.remove('on'));
+          r.classList.add('on');
+        });
+        const z=Math.floor(Math.random()*11);
+        zoomiesEl.value=z; zoomLabel(z);
+      };
+    }
 
-    zoomiesEl.addEventListener('input',e=>zoomLabel(e.target.value));
-    zoomLabel(zoomiesEl.value);
+    zoomiesEl?.addEventListener('input',e=>zoomLabel(e.target.value));
+    zoomLabel(zoomiesEl?.value ?? 5);
 
-    copyBtn.onclick=async()=>{
+    copyBtn?.addEventListener('click', async()=>{
       if(!lastPlainLine){ showToast("Nothing to copy"); return; }
       try{ await navigator.clipboard.writeText(lastPlainLine); showToast("Copied!"); }
       catch{ showToast("Copy failed"); }
-    };
+    });
 
     function renderGifs(){
-      if(!gifToggle.checked){ gifRail.innerHTML=""; return; }
+      if(!gifToggle || !gifToggle.checked){ gifRail.innerHTML=""; return; }
       const picks=shuffle(DOG_GIFS_SOURCES).slice(0,4);
       const CAPS=[
         "Explaining advanced Barkonomics.",
@@ -354,6 +369,7 @@
 
     // Small hero bubble rotation
     setInterval(()=>{
+      if (!heroBubble) return;
       heroBubble.textContent = pick([
         "Translator online. Begin borks.",
         "Fluent in Treatish.",
@@ -376,6 +392,7 @@
     let bubbleIndex=0, bubbleTimer=null, resumeTimer=null;
 
     function fadeSwap(el, text, dur=300){
+      if (!el) return;
       el.style.transition='opacity '+dur+'ms ease';
       el.style.opacity='0';
       setTimeout(()=>{ el.textContent=text; el.style.opacity='1'; }, dur);
@@ -403,7 +420,7 @@
 
     async function doTranslate(){
       const squirrel = Number(readSegVal('squirrelSeg','50'));
-      const zoomies = Number(zoomiesEl.value || 5);
+      const zoomies = Number(zoomiesEl?.value ?? 5);
 
       let line;
       if (squirrel === 100) line = squirrelEasterEgg();
@@ -413,13 +430,15 @@
       lastPlainLine = line;
 
       // show/keep barking gif
-      loadWithFallback(barkGifImg, BARK_SOURCES, ()=> barkGifEl.style.display='none');
-      barkGifEl.classList.add('on'); // keep visible; remove to auto-hide
+      loadWithFallback(barkGifImg, BARK_SOURCES, ()=> barkGifEl && (barkGifEl.style.display='none'));
+      barkGifEl?.classList.add('on'); // keep visible; remove to auto-hide
 
       // type, then decorate
-      replyEl.classList.remove('new'); void replyEl.offsetWidth; replyEl.classList.add('new');
-      await typeWriter(replyEl, line, 40);
-      replyEl.innerHTML = decorate(replyEl.textContent);
+      replyEl?.classList.remove('new'); void replyEl?.offsetWidth; replyEl?.classList.add('new');
+      if (replyEl) {
+        await typeWriter(replyEl, line, 40);
+        replyEl.innerHTML = decorate(replyEl.textContent);
+      }
 
       // mirror to background bubble, then resume rotation later
       setBgBubble(lastPlainLine);
@@ -427,14 +446,15 @@
       // flair
       if (Math.random() < 0.35) popConfetti(28);
       renderGifs();
-      quipEl.textContent = pick(QUIPS);
+      if (quipEl) quipEl.textContent = pick(QUIPS);
     }
 
-    translateBtn.onclick = doTranslate;
+    translateBtn?.addEventListener('click', doTranslate);
 
     // Initial fun render
     renderGifs();
-    quipEl.textContent = pick(QUIPS);
+    if (quipEl) quipEl.textContent = pick(QUIPS);
+  }); // DOMContentLoaded
   </script>
 </body>
 </html>

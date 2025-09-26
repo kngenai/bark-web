@@ -283,11 +283,15 @@
       "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Dog_cartoon.svg/512px-Dog_cartoon.svg.png",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Cartoon_Dog.svg/512px-Cartoon_Dog.svg.png"
     ];
-    const HERO_SOURCES = [
-      "/assets/dog-bubble.png",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Husky_Walking.jpg/320px-Husky_Walking.jpg",
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Golden_Retriever_medium-to-light-coat.jpg/320px-Golden_Retriever_medium-to-light-coat.jpg"
-    ];
+const heroDog = document.getElementById('heroDog');
+
+const HERO_SOURCES = [
+  "/assets/dog-bubble.png", // ✅ your working file
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Husky_Walking.jpg/320px-Husky_Walking.jpg",
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Golden_Retriever_medium-to-light-coat.jpg/320px-Golden_Retriever_medium-to-light-coat.jpg"
+];
+
+loadWithFallback(heroDog, HERO_SOURCES, () => { heroDog.style.display = 'none'; });
 
     loadWithFallback(document.getElementById('bgDog'), BG_DOG_SOURCES, () => {
       const bg = document.querySelector('.bg-hero');
@@ -440,6 +444,7 @@
   </script>
 </body>
 </html>
+
 
 
 

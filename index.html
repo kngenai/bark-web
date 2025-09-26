@@ -12,14 +12,13 @@
 
   <!-- FUN BACKGROUND LAYER (cartoon dog + bubble) -->
   <div class="bg-hero">
-    <!-- renamed asset to avoid spaces; add id for JS -->
     <img id="bgDog" class="bg-dog" src="/assets/bg-dog-cartoon.png" alt="Cartoon dog" />
     <div id="bgBubble" class="bg-bubble">Woof means hello!</div>
   </div>
 
   <main class="wrap">
     <h1>Dog Bark Translator 🐶</h1>
-    <p class="sub">Pick a breed, tap a few traits, dial in the Woof-Meter, then translate. <em>Entertainment only!</em></p>
+    <p class="sub">Pick a breed, dial in the Woof-Meter, then translate. <em>Entertainment only!</em></p>
 
     <!-- Hero (small mascot + bubble under title) -->
     <section class="hero">
@@ -32,7 +31,7 @@
     </section>
 
     <h2 class="section-title">Describe the Bark 🎤</h2>
-    <p class="section-sub">Use the Woof-Meter to set how the bark sounds — count, pitch, urgency, mood, squirrel %, and zoomies.</p>
+    <p class="section-sub">Use the Woof-Meter to set how the bark sounds — count, pitch, urgency, squirrel %, and zoomies.</p>
 
     <section class="controls" aria-label="Inputs">
       <!-- Breed -->
@@ -56,7 +55,7 @@
         <option>Great Dane</option>
       </select>
 
-      <!-- Traits 
+      <!-- Traits (commented out is fine now) 
       <label>Personality (tap a few)</label>
       <div class="chips" id="traitChips" role="group" aria-label="Personality traits">
         <button data-trait="goofy">goofy</button>
@@ -69,7 +68,8 @@
         <button data-trait="dramatic talker">dramatic talker</button>
         <button data-trait="nose-driven">nose-driven</button>
         <button data-trait="cuddle bug">cuddle bug</button>
-      </div> -->
+      </div>
+      -->
 
       <!-- Woof-Meter -->
       <div class="meter">
@@ -98,11 +98,23 @@
           </div>
         </div>
         <div class="meter-row">
+          <div class="meter-label">Squirrel %</div>
+          <div class="seg" id="squirrelSeg">
+            <button data-val="0">0%</button>
+            <button data-val="50" class="on">50%</button>
+            <button data-val="100">100%</button>
+          </div>
+        </div>
+        <div class="meter-row">
           <div class="meter-label">Zoomies</div>
           <div class="zoom">
             <input id="zoomies" type="range" min="0" max="10" value="5" step="1" />
             <div id="zoomLabel" class="zoom-label">5 · Wigglebutt</div>
           </div>
+        </div>
+
+        <div class="meter-actions">
+          <button id="randomizeWoof" class="btn ghost">🎲 Randomize woof</button>
         </div>
       </div>
 
@@ -185,7 +197,7 @@
     const barkGifImg = document.getElementById('barkGifImg');
     const zoomiesEl = document.getElementById('zoomies');
     const zoomLabelEl = document.getElementById('zoomLabel');
-    //const chipsEl = document.getElementById('traitChips');
+    const chipsEl = document.getElementById('traitChips');
     const gifRail = document.getElementById('gifRail');
     const gifToggle = document.getElementById('gifToggle');
     const quipEl = document.getElementById('quip');
@@ -263,30 +275,32 @@
       "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Dog_cartoon.svg/512px-Dog_cartoon.svg.png",
       "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Cartoon_Dog.svg/512px-Cartoon_Dog.svg.png"
     ];
-const heroDog = document.getElementById('heroDog');
+    const HERO_SOURCES = [
+      "/assets/dog-bubble.png",  /* your working file */
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Husky_Walking.jpg/320px-Husky_Walking.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Golden_Retriever_medium-to-light-coat.jpg/320px-Golden_Retriever_medium-to-light-coat.jpg"
+    ];
 
-const HERO_SOURCES = [
-  "/assets/dog-bubble.png", // ✅ your working file
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Husky_Walking.jpg/320px-Husky_Walking.jpg",
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Golden_Retriever_medium-to-light-coat.jpg/320px-Golden_Retriever_medium-to-light-coat.jpg"
-];
+    const bgDog  = document.getElementById('bgDog');
+    const heroDog = document.getElementById('heroDog');
 
-loadWithFallback(heroDog, HERO_SOURCES, () => { heroDog.style.display = 'none'; });
-
-    loadWithFallback(document.getElementById('bgDog'), BG_DOG_SOURCES, () => {
+    loadWithFallback(bgDog, BG_DOG_SOURCES, () => {
       const bg = document.querySelector('.bg-hero');
       if (bg) bg.style.display = 'none';
     });
-    loadWithFallback(document.getElementById('heroDog'), HERO_SOURCES, () => {
-      const heroImg = document.getElementById('heroDog');
-      if (heroImg) heroImg.style.display = 'none';
+
+    loadWithFallback(heroDog, HERO_SOURCES, () => {
+      if (heroDog) heroDog.style.display = 'none';
     });
 
     /* ================== UI WIRING ================== */
-    chipsEl.addEventListener('click', (e)=>{
-      if (e.target.tagName!=='BUTTON') return;
-      e.target.classList.toggle('chip-on');
-    });
+    // Traits may be commented out; guard this:
+    if (chipsEl) {
+      chipsEl.addEventListener('click', (e)=>{
+        if (e.target.tagName!=='BUTTON') return;
+        e.target.classList.toggle('chip-on');
+      });
+    }
 
     Object.values(segGroups).forEach(seg=>{
       seg.addEventListener('click', e=>{
@@ -400,7 +414,7 @@ loadWithFallback(heroDog, HERO_SOURCES, () => { heroDog.style.display = 'none'; 
 
       // show/keep barking gif
       loadWithFallback(barkGifImg, BARK_SOURCES, ()=> barkGifEl.style.display='none');
-      barkGifEl.classList.add('on'); // keep visible; remove this line if you want it to auto-hide
+      barkGifEl.classList.add('on'); // keep visible; remove to auto-hide
 
       // type, then decorate
       replyEl.classList.remove('new'); void replyEl.offsetWidth; replyEl.classList.add('new');
@@ -424,13 +438,3 @@ loadWithFallback(heroDog, HERO_SOURCES, () => { heroDog.style.display = 'none'; 
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-

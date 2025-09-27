@@ -39,6 +39,51 @@
     setTimeout(() => t.classList.remove("on"), 1500);
   }
 
+  // Dog GIF rail
+function renderGifs() {
+  const gifRail = document.getElementById("gifRail");
+  const gifToggle = document.getElementById("gifToggle");
+  if (!gifRail || !gifToggle || !gifToggle.checked) {
+    if (gifRail) gifRail.innerHTML = "";
+    return;
+  }
+
+  const DOG_GIFS = [
+    ["/assets/dog-blah-blah-blah.gif", "https://upload.wikimedia.org/wikipedia/commons/1/18/Dog_tail_wagging.gif"],
+    ["/assets/dog-talk-dog.gif", "https://upload.wikimedia.org/wikipedia/commons/5/5f/Doggy_treadmill.gif"],
+    ["/assets/talking-ben.gif", "https://upload.wikimedia.org/wikipedia/commons/5/5a/Dog_shakes_head.gif"],
+    ["/assets/dog-phone.gif", "https://upload.wikimedia.org/wikipedia/commons/8/8c/Dog_sleeping.gif"]
+  ];
+
+  const captions = [
+    "Explaining advanced Barkonomics.",
+    "Consulting Professor Ben.",
+    "Zoomies research in progress.",
+    "Bark stream, 24/7."
+  ];
+
+  // Pick up to 4 random sets
+  const picks = [...DOG_GIFS].sort(() => Math.random() - 0.5).slice(0, 4);
+
+  gifRail.innerHTML = picks.map((sources, i) => `
+    <figure class="gif-card">
+      <img alt="Dog gif" referrerpolicy="no-referrer" />
+      <figcaption class="caption">${captions[i % captions.length]}</figcaption>
+    </figure>
+  `).join("");
+
+  Array.from(gifRail.querySelectorAll("img")).forEach((img, i) => {
+    const sources = picks[i].slice();
+    const tryNext = () => {
+      if (!sources.length) return;
+      img.src = sources.shift();
+      img.onerror = tryNext;
+    };
+    tryNext();
+  });
+}
+
+
   // Copy of funny text bits
   const OPENERS = [
     "Okay, human, here is the situation:",

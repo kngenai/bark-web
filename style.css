@@ -153,3 +153,31 @@ body{
   .hero-right{ order:-1; }
   .grid{ grid-template-columns: 1fr; }
 }
+
+.gif-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  justify-content: center;
+}
+
+.gif-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  width: 200px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.gif-card img {
+  width: 100%;
+  display: block;
+}
+
+.caption {
+  font-size: 0.9rem;
+  padding: 0.5rem;
+}
+

@@ -8,37 +8,45 @@ body {
 }
 .wrap { max-width: 880px; margin: 0 auto; padding: 24px 16px; }
 
-/* Fixed GIF rail at top */
-:root { --gif-rail-h: 150px; } /* will be updated by JS after first render */
-.gif-rail.top-rail {
-  position: fixed; top: 0; left: 0; right: 0;
-  z-index: 1000;
-  display: flex; gap: 12px; justify-content: center; align-items: center;
-  padding: 10px 12px;
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: saturate(120%) blur(6px);
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-  overflow-x: auto;
-}
-.gif-rail .gif-card { width: 140px; flex: 0 0 auto; text-align: center; }
-.gif-rail .gif-card img { width: 100%; height: auto; border-radius: 10px; display: block; }
-.gif-rail .caption { font-size: 12px; margin-top: 4px; opacity: .75; }
+h1 { margin: 0.3em 0 0.2em; }
+.sub { margin: 0 0 0.8em; color:#555; }
 
-/* Make room for the fixed rail */
-.wrap { padding-top: calc(var(--gif-rail-h) + 10px); }
-
-/* Hero & bubbles */
-.bg-hero { text-align: center; margin-top: calc(var(--gif-rail-h) + 0px); }
+/* Background hero */
+.bg-hero { text-align: center; padding-top: 8px; }
 .bg-bubble {
   display: inline-block; margin-top: 6px; padding: 6px 10px;
   background: #fffb; border-radius: 10px; font-style: italic;
 }
-.hero { display: flex; align-items: center; gap: 10px; margin: 16px 0; }
+
+/* Hero */
+.hero { display: flex; align-items: center; gap: 12px; margin: 8px 0 12px; }
 .hero .dog img { height: 80px; display: block; }
 .bubble-callout { background: #eef; padding: 6px 10px; border-radius: 10px; }
 
-/* Controls */
-.section-title { margin-top: 16px; }
+/* Sticky GIF rail (compact, under the hero) */
+.gif-rail.sticky-rail {
+  position: sticky;
+  top: 0;       /* sticks to top of viewport while near top */
+  z-index: 10;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 12px;
+  margin: 8px 0 14px;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: saturate(115%) blur(4px);
+}
+.gif-rail .gif-card { width: 160px; max-width: 42vw; text-align: center; }
+.gif-rail .gif-card img { width: 100%; height: auto; border-radius: 10px; display:block; }
+.gif-rail .caption { font-size: 12px; margin-top: 4px; opacity: .75; }
+
+/* Sections / controls */
+.section-title { margin: 10px 0 4px; }
+.section-sub { margin: 0 0 10px; color:#555; }
+
 .meter-row { margin: 10px 0; }
 .meter-label { font-weight: 700; margin-bottom: 6px; }
 .seg button { margin-right: 6px; padding: 6px 10px; border-radius: 6px; border: 1px solid #ddd; background:#fafafa; cursor:pointer; }
@@ -69,5 +77,5 @@ body {
 
 /* Small screens */
 @media (max-width: 520px) {
-  .gif-rail .gif-card { width: 110px; }
+  .gif-rail .gif-card { width: 120px; }
 }

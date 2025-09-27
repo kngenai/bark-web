@@ -1,3 +1,16 @@
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('translateBtn');
+  const out = document.getElementById('reply');
+  if (!btn || !out) { console.log('Buttons/outputs not found'); return; }
+
+  btn.addEventListener('click', () => {
+    out.textContent = "Okay human, I speak Woof now. Snacks are a need, not a want. Also, window patrol begins at dawn.";
+  });
+
+  console.log('Minimal JS loaded and click wired.');
+});
+/*
+
 // ------- Data -------
 const HERO_GIFS = [
   ["/assets/dog-talk-dog.gif", "https://upload.wikimedia.org/wikipedia/commons/1/18/Dog_tail_wagging.gif"],
@@ -254,3 +267,4 @@ document.addEventListener('DOMContentLoaded', () => {
     catch { showToast("Copy failed"); }
   });
 });
+

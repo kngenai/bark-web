@@ -158,6 +158,15 @@ function renderGifs() {
 
     let lastText = "";
 
+    // Initial render
+renderGifs();
+
+// Re-render when GIF toggle changes
+const gifToggle = document.getElementById("gifToggle");
+if (gifToggle) {
+  gifToggle.addEventListener("change", renderGifs);
+}
+
     // Images
     loadWithFallback(heroDog, [
       "/assets/dog-bubble.png",

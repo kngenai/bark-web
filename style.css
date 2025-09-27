@@ -158,8 +158,9 @@ body{
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-  margin: 1.5rem 0;
+  margin: 1.5rem auto;
   justify-content: center;
+  max-width: 900px;
 }
 
 .gif-card {
@@ -168,7 +169,12 @@ body{
   overflow: hidden;
   width: 200px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: transform 0.2s;
+}
+
+.gif-card:hover {
+  transform: scale(1.05);
 }
 
 .gif-card img {
@@ -177,7 +183,10 @@ body{
 }
 
 .caption {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   padding: 0.5rem;
+  color: #444;
 }
+
+
 

@@ -4,145 +4,142 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Bark Translator — Web 🐶</title>
-  <meta name="description" content="A playful dog bark translator tailored to breed, traits, and your Woof-Meter." />
+  <meta name="description" content="A playful dog bark translator tailored to your Woof-Meter." />
   <meta name="referrer" content="no-referrer" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 </head>
 <body>
+  <header class="site-header">
+    <div class="brand">
+      <div class="logo">🐶</div>
+      <div class="title">Bark Translator</div>
+    </div>
+    <div class="badge">for fun only</div>
+  </header>
 
-  <!-- FUN BACKGROUND LAYER -->
-  <div class="bg-hero">
-    <img id="bgDog" class="bg-dog" src="/assets/bg-dog-cartoon.png" alt="Cartoon dog" />
-    <div id="bgBubble" class="bg-bubble">Woof means hello!</div>
-  </div>
+  <!-- Hero with tasteful GIFs -->
+  <section class="hero-wrap">
+    <div class="hero-card">
+      <div class="hero-left">
+        <h1>Decode your dog’s <span class="accent">borks</span></h1>
+        <p class="sub">Dial in the Woof-Meter and get a cheeky, 2–3 sentence “translation.”</p>
 
-  <main class="wrap">
-    <h1>Dog Bark Translator 🐶</h1>
-    <p class="sub">Pick a breed, dial in the Woof-Meter, then translate. <em>Entertainment only!</em></p>
-
-    <!-- Hero mascot -->
-    <section class="hero">
-      <div class="dog">
-        <img id="heroDog" alt="Happy dog mascot" src="/assets/dog-bubble.png" />
+        <div class="hero-gifs" id="heroGifs" aria-label="Dog GIFs"></div>
       </div>
-      <div class="bubble-callout">
-        <span id="heroBubble">Translator online. Begin borks.</span>
+      <div class="hero-right">
+        <img id="heroDog" class="hero-dog" alt="Happy dog mascot" src="/assets/dog-bubble.png" />
+        <div id="heroBubble" class="hero-bubble">Translator online. Begin borks.</div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- 👇 Sticky GIF rail (compact, near the top, not full-screen fixed) -->
-    <section class="gif-rail sticky-rail" id="gifRail" aria-label="Dog GIFs"></section>
+  <main class="container">
+    <div class="grid">
+      <!-- Controls -->
+      <section class="card controls" aria-label="Inputs">
+        <h2 class="card-title">Woof-Meter</h2>
 
-    <h2 class="section-title">Describe the Bark 🎤</h2>
-    <p class="section-sub">Use the Woof-Meter to set how the bark sounds — count, pitch, urgency, squirrel %, and zoomies.</p>
+        <label class="lbl" for="breed">Breed</label>
+        <select id="breed" class="select">
+          <option value="">— Select a breed —</option>
+          <option>Labrador Retriever</option>
+          <option>Golden Retriever</option>
+          <option>German Shepherd</option>
+          <option>French Bulldog</option>
+          <option>Beagle</option>
+          <option>Poodle</option>
+          <option>Husky</option>
+          <option>Border Collie</option>
+          <option>Corgi</option>
+          <option>Dachshund</option>
+          <option>Shiba</option>
+          <option>Australian Shepherd</option>
+          <option>Boxer</option>
+          <option>Rottweiler</option>
+          <option>Great Dane</option>
+        </select>
 
-    <section class="controls" aria-label="Inputs">
-      <!-- Breed -->
-      <label for="breed">Dog breed</label>
-      <select id="breed" class="select" aria-label="Dog breed">
-        <option value="">— Select a breed —</option>
-        <option>Labrador Retriever</option>
-        <option>Golden Retriever</option>
-        <option>German Shepherd</option>
-        <option>French Bulldog</option>
-        <option>Beagle</option>
-        <option>Poodle</option>
-        <option>Husky</option>
-        <option>Border Collie</option>
-        <option>Corgi</option>
-        <option>Dachshund</option>
-        <option>Shiba</option>
-        <option>Australian Shepherd</option>
-        <option>Boxer</option>
-        <option>Rottweiler</option>
-        <option>Great Dane</option>
-      </select>
-
-      <!-- Woof-Meter -->
-      <div class="meter">
-        <div class="meter-row">
-          <div class="meter-label">Count</div>
-          <div class="seg" id="countSeg">
-            <button data-val="one_woof">One woof</button>
-            <button data-val="two_woofs" class="on">Two woofs</button>
-            <button data-val="pack_chorus">Pack chorus</button>
+        <div class="row">
+          <div class="col">
+            <div class="lbl">Count</div>
+            <div class="seg" id="countSeg">
+              <button data-val="one">One</button>
+              <button data-val="two" class="on">Two</button>
+              <button data-val="many">Pack</button>
+            </div>
           </div>
-        </div>
-        <div class="meter-row">
-          <div class="meter-label">Pitch</div>
-          <div class="seg" id="pitchSeg">
-            <button data-val="squeaky">Squeaky 🐭</button>
-            <button data-val="middle" class="on">Middle 🎺</button>
-            <button data-val="thunder">Thunder 💥</button>
-          </div>
-        </div>
-        <div class="meter-row">
-          <div class="meter-label">Urgency</div>
-          <div class="seg" id="urgencySeg">
-            <button data-val="casual_sniff">Casual sniff</button>
-            <button data-val="snack_request" class="on">Snack request</button>
-            <button data-val="snack_emergency">Snack emergency</button>
-          </div>
-        </div>
-        <div class="meter-row">
-          <div class="meter-label">Squirrel %</div>
-          <div class="seg" id="squirrelSeg">
-            <button data-val="0">0%</button>
-            <button data-val="50" class="on">50%</button>
-            <button data-val="100">100%</button>
-          </div>
-        </div>
-        <div class="meter-row">
-          <div class="meter-label">Zoomies</div>
-          <div class="zoom">
-            <input id="zoomies" type="range" min="0" max="10" value="5" step="1" />
-            <div id="zoomLabel" class="zoom-label">5 · Wigglebutt</div>
+          <div class="col">
+            <div class="lbl">Pitch</div>
+            <div class="seg" id="pitchSeg">
+              <button data-val="high">High</button>
+              <button data-val="mid" class="on">Mid</button>
+              <button data-val="low">Low</button>
+            </div>
           </div>
         </div>
 
-        <div class="meter-actions">
-          <button id="randomizeWoof" class="btn ghost">🎲 Randomize woof</button>
+        <div class="row">
+          <div class="col">
+            <div class="lbl">Urgency</div>
+            <div class="seg" id="urgencySeg">
+              <button data-val="chill" class="on">Chill</button>
+              <button data-val="want">Wants</button>
+              <button data-val="emergency">Emergency</button>
+            </div>
+          </div>
+          <div class="col">
+            <div class="lbl">Squirrel %</div>
+            <div class="seg" id="squirrelSeg">
+              <button data-val="0">0%</button>
+              <button data-val="50" class="on">50%</button>
+              <button data-val="100">100%</button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <!-- Actions -->
-      <div class="actions">
-        <button id="translateBtn" class="btn btn-primary">Translate</button>
-      </div>
-    </section>
+        <div class="lbl">Zoomies</div>
+        <div class="slider-wrap">
+          <input id="zoomies" type="range" min="0" max="10" value="5" step="1" />
+          <div id="zoomLabel" class="hint">5 · Wigglebutt</div>
+        </div>
 
-    <!-- Result -->
-    <section class="result" aria-live="polite">
-      <div class="result-head">
-        <b>Translation:</b>
-        <button id="copyBtn" class="btn icon" aria-label="Copy translation" title="Copy">📋</button>
-      </div>
-      <div id="reply" class="bubble">—</div>
+        <div class="actions">
+          <button id="randomizeWoof" class="btn ghost">🎲 Randomize</button>
+          <button id="translateBtn" class="btn primary">Translate</button>
+        </div>
+      </section>
 
-      <!-- Barking GIF -->
-      <div id="barkGif" class="bark-gif">
-        <img id="barkGifImg" alt="Dog barking" referrerpolicy="no-referrer" />
-        <p class="gif-caption">Dog is “speaking” the translation…</p>
-      </div>
-    </section>
+      <!-- Output -->
+      <section class="card output" aria-live="polite">
+        <h2 class="card-title">Translation</h2>
 
-    <!-- Reactions -->
-    <section class="reactions" aria-label="Reactions">
-      <button class="react" data-emoji="🦴">🦴 <span class="count">0</span></button>
-      <button class="react" data-emoji="😂">😂 <span class="count">0</span></button>
-      <button class="react" data-emoji="🥹">🥹 <span class="count">0</span></button>
-      <button class="react" data-emoji="🐾">🐾 <span class="count">0</span></button>
-      <div class="spacer"></div>
-      <label class="toggle">
-        <input id="gifToggle" type="checkbox" checked />
-        <span class="slider"></span><span class="label">GIFs on</span>
-      </label>
-    </section>
+        <div class="speech">
+          <div id="reply" class="speech-bubble">—</div>
+          <button id="copyBtn" class="icon-btn" aria-label="Copy">📋</button>
+        </div>
 
-    <p id="quip" class="quip">Licensed in Bark-itecture, minor in Zoomology.</p>
+        <div class="gif-area">
+          <img id="barkGifImg" alt="Dog barking" referrerpolicy="no-referrer" />
+          <p class="gif-caption">Dog is “speaking” the translation…</p>
+        </div>
+      </section>
+    </div>
+
+    <p id="quip" class="quip">Powered by snacks and questionable science.</p>
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
   </main>
 
-  <script src="/translate.js" defer></script>
+  <footer class="footer">
+    <div class="bg-hero">
+      <img id="bgDog" class="bg-dog" src="/assets/bg-dog-cartoon.png" alt="Cartoon dog" />
+      <div id="bgBubble" class="bg-bubble">Woof means hello!</div>
+    </div>
+  </footer>
+
+  <!-- External JS (IMPORTANT: make sure translate.js is at the same path) -->
+  <script src="translate.js" defer></script>
 </body>
 </html>

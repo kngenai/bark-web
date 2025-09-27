@@ -10,9 +10,6 @@
 </head>
 <body>
 
-  <!-- Top GIF rail (fixed banner) -->
-  <section class="gif-rail top-rail" id="gifRail" aria-label="Dog GIFs"></section>
-
   <!-- FUN BACKGROUND LAYER -->
   <div class="bg-hero">
     <img id="bgDog" class="bg-dog" src="/assets/bg-dog-cartoon.png" alt="Cartoon dog" />
@@ -32,6 +29,9 @@
         <span id="heroBubble">Translator online. Begin borks.</span>
       </div>
     </section>
+
+    <!-- 👇 Sticky GIF rail (compact, near the top, not full-screen fixed) -->
+    <section class="gif-rail sticky-rail" id="gifRail" aria-label="Dog GIFs"></section>
 
     <h2 class="section-title">Describe the Bark 🎤</h2>
     <p class="section-sub">Use the Woof-Meter to set how the bark sounds — count, pitch, urgency, squirrel %, and zoomies.</p>
@@ -143,7 +143,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
   </main>
 
-  <!-- External JS only (prevents inline-script parsing bugs) -->
   <script src="/translate.js" defer></script>
 </body>
 </html>

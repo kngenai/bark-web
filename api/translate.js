@@ -13,7 +13,7 @@ const BARK_SOURCES = [
   "https://upload.wikimedia.org/wikipedia/commons/1/18/Dog_tail_wagging.gif"
 ];
 
-// Each item is [local, fallback]
+// GIF choices: [local, fallback]
 const DOG_GIFS_SOURCES = [
   ["/assets/dog-blah-blah-blah.gif","https://upload.wikimedia.org/wikipedia/commons/1/18/Dog_tail_wagging.gif"],
   ["/assets/dog-talk-dog.gif","https://upload.wikimedia.org/wikipedia/commons/5/5f/Doggy_treadmill.gif"],
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let lastPlainLine = "";
 
-  // ===== Initial images with fallbacks =====
+  // Initial images w/ fallbacks
   const BG_DOG_SOURCES = [
     "/assets/bg-dog-cartoon.png",
     "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Dog_cartoon.svg/512px-Dog_cartoon.svg.png",
@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (heroImg) heroImg.style.display = 'none';
   });
 
-  // ===== UI wiring =====
+  // Segmented groups (single select)
   Object.values(segGroups).forEach(seg=>{
     if (!seg) return;
     seg.addEventListener('click', e=>{
@@ -147,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Randomize
   const rndBtn = document.getElementById('randomizeWoof');
   if (rndBtn) {
     rndBtn.onclick = ()=>{
@@ -154,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!seg) return;
         const btns=Array.from(seg.querySelectorAll('button'));
         if (!btns.length) return;
-        const r=pick(btns);
+        const r=btns[Math.floor(Math.random()*btns.length)];
         btns.forEach(b=>b.classList.remove('on'));
         r.classList.add('on');
       });
@@ -166,26 +167,26 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  // Zoom label
   zoomiesEl?.addEventListener('input',e=>{
     zoomLabelEl.textContent = zoomLabelText(e.target.value);
   });
   if (zoomiesEl) zoomLabelEl.textContent = zoomLabelText(zoomiesEl.value);
 
+  // Copy
   copyBtn?.addEventListener('click', async()=>{
     if(!lastPlainLine){ showToast(toastEl,"Nothing to copy"); return; }
     try{ await navigator.clipboard.writeText(lastPlainLine); showToast(toastEl,"Copied!"); }
     catch{ showToast(toastEl,"Copy failed"); }
   });
 
-  // ===== GIF rail (top banner) =====
+  // GIF rail (sticky, compact, show 2)
   function renderGifs(){
     if(!gifRail) return;
-    if(gifToggle && !gifToggle.checked){ gifRail.innerHTML=""; syncRailOffset(); return; }
-    const picks = shuffle(DOG_GIFS_SOURCES).slice(0, 2); // show only 2
-    const CAPS = [
-      "Explaining advanced Barkonomics.",
-      "Zoomies research in progress."
-    ];
+    if(gifToggle && !gifToggle.checked){ gifRail.innerHTML=""; return; }
+    const picks = shuffle(DOG_GIFS_SOURCES).slice(0, 2);
+    const CAPS = ["Explaining advanced Barkonomics.","Zoomies research in progress."];
+
     gifRail.innerHTML = picks.map((arr,i)=>(
       `<figure class="gif-card">
          <img referrerpolicy="no-referrer" alt="Dog gif" />
@@ -193,24 +194,12 @@ document.addEventListener('DOMContentLoaded', () => {
        </figure>`
     )).join("");
 
-    // load with fallback per card
     Array.from(gifRail.querySelectorAll('.gif-card')).forEach((card,i)=>{
       const img=card.querySelector('img');
       loadWithFallback(img, picks[i], ()=>{ card.classList.add('failed'); img.remove(); });
     });
-
-    // after images start loading, adjust top padding to true height
-    setTimeout(syncRailOffset, 50);
-    setTimeout(syncRailOffset, 400); // second pass after images settle
   }
   gifToggle?.addEventListener('change', renderGifs);
-
-  function syncRailOffset(){
-    const rail = document.getElementById('gifRail');
-    if (!rail) return;
-    const h = rail.getBoundingClientRect().height || 150;
-    document.documentElement.style.setProperty('--gif-rail-h', `${Math.ceil(h)}px`);
-  }
 
   // Rotate small hero bubble
   setInterval(()=>{
@@ -258,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   startBubbleRotation();
 
-  // ===== Translate (no API) =====
+  // Translate (no API)
   const readSegVal = (segId, fallback)=> document.querySelector(`#${segId} .on`)?.dataset.val ?? fallback;
   const squirrelEasterEgg = ()=> "SQUIRREL ALERT. All systems redirect to window patrol. If lost, follow the chaos trail.";
   const tornadoEasterEgg = ()=> "Zoomies at DEFCON 1. Sofa, it’s not you—it’s me. BRB in a blur.";

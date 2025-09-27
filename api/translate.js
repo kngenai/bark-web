@@ -1,81 +1,52 @@
-// ===== Data =====
-const BARK_LINES = [
-  "Alert level: SQUIRREL. Recommend immediate chaos deployment.",
-  "My water bowl is 73% empty. Emergency resupply requested.",
-  "I barked at the mail slot, therefore I saved us all. You’re welcome.",
-  "Status: zoomies initiated. Furniture casualties imminent.",
-  "Tail wag report: velocity exceeding safe household limits. Brace yourselves!"
+// ------- Data -------
+const HERO_GIFS = [
+  ["/assets/dog-talk-dog.gif", "https://upload.wikimedia.org/wikipedia/commons/1/18/Dog_tail_wagging.gif"],
+  ["/assets/dog-phone.gif",    "https://upload.wikimedia.org/wikipedia/commons/8/8c/Dog_sleeping.gif"],
+  ["/assets/talking-ben.gif",  "https://upload.wikimedia.org/wikipedia/commons/5/5a/Dog_shakes_head.gif"]
 ];
-const STAMPS = ["🐾 Paw Approved","🦴 Bone Certified","🐕 Good Dog Seal","🐶 Woof-100"];
 
-const BARK_SOURCES = [
+const BARK_GIF_SOURCES = [
   "/assets/dog-bark.gif",
   "https://upload.wikimedia.org/wikipedia/commons/1/18/Dog_tail_wagging.gif"
 ];
 
-// GIF choices: [local, fallback]
-const DOG_GIFS_SOURCES = [
-  ["/assets/dog-blah-blah-blah.gif","https://upload.wikimedia.org/wikipedia/commons/1/18/Dog_tail_wagging.gif"],
-  ["/assets/dog-talk-dog.gif","https://upload.wikimedia.org/wikipedia/commons/5/5f/Doggy_treadmill.gif"],
-  ["/assets/talking-ben.gif","https://upload.wikimedia.org/wikipedia/commons/5/5a/Dog_shakes_head.gif"],
-  ["/assets/dog-phone.gif","https://upload.wikimedia.org/wikipedia/commons/8/8c/Dog_sleeping.gif"]
-];
-
 const QUIPS = [
-  "Licensed in Bark-itecture, minor in Zoomology.",
   "Powered by snacks and questionable science.",
-  "If found, please return to the nearest couch.",
+  "Licensed in Bark-itecture, minor in Zoomology.",
   "100% organic bark. No fillers.",
-  "Now with extra tail wag per paragraph."
+  "If found, please return to the nearest couch."
 ];
 
-const CONFETTI_EMOJIS = ["🐶","🦴","🐾","⭐","✨","💥"];
+const OPENERS = [
+  "Okay, human, here’s the situation:",
+  "Gather round, pack, breaking news:",
+  "Small announcement from the Ministry of Borks:",
+  "Official memo from the Department of Zoomies:"
+];
+const COUNT_LINES = {
+  one:  ["a single, dramatic woof", "one very meaningful bark", "a solo statement piece"],
+  two:  ["a classy double-woof", "two precision barks", "a tasteful bark-bark"],
+  many: ["a full pack chorus", "a community bark meeting", "a symphony of howls"]
+};
+const PITCH_LINES = {
+  high: ["in chipmunk-adjacent pitch", "soprano mode engaged", "whistle-register activated"],
+  mid:  ["in confident mid-range", "with podcast-host energy", "like a professional doorbell"],
+  low:  ["from the basement of the soul", "subwoofer activated", "earthquake advisory level"]
+};
+const URGENCY_LINES = {
+  chill:      ["no rush, just vibes", "calendar invite: optional", "non-urgent, yet important"],
+  want:       ["requesting immediate snack deployment", "TPS report shows treat deficit", "operational need: belly rubs"],
+  emergency:  ["full red alert", "DEFCON woof", "mission-critical, paws on deck"]
+};
 
-// ===== Helpers =====
-const pick = (arr)=>arr[Math.floor(Math.random()*arr.length)];
-const shuffle = (a)=>[...a].sort(()=>Math.random()-0.5);
-const prefersReduced = ()=> window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+const CONFETTI = ["🐶","🦴","🐾","✨","⭐"];
 
-function typeWriter(el,text,speed=40){
-  if (!el) return Promise.resolve();
-  if (prefersReduced()) { el.textContent = text; return Promise.resolve(); }
-  el.textContent="";
-  return new Promise(async (resolve)=>{
-    for(let i=0;i<text.length;i++){
-      el.textContent += text[i];
-      await new Promise(r=>setTimeout(r,speed));
-    }
-    resolve();
-  });
-}
-function decorate(line){ return `${line} <div class="stamp">${pick(STAMPS)}</div>`; }
-function zoomLabelText(v){
-  const n=Number(v);
-  const bucket=n<=2?"Couch potato":n<=6?"Wigglebutt":"Tornado";
-  return `${n} · ${bucket}`;
-}
-function showToast(el,msg){
-  if(!el) return;
-  el.textContent=msg;
-  el.classList.add('on');
-  setTimeout(()=>el.classList.remove('on'),1500);
-}
-function popConfetti(count=24){
-  if (prefersReduced()) return;
-  const layer=document.createElement('div');
-  layer.className='confetti'; document.body.appendChild(layer);
-  const W=window.innerWidth;
-  for(let i=0;i<count;i++){
-    const s=document.createElement('span');
-    s.className='piece';
-    s.textContent=pick(CONFETTI_EMOJIS);
-    s.style.left=(Math.random()*W)+'px';
-    s.style.fontSize=(16+Math.random()*14)+'px';
-    s.style.animationDelay=(Math.random()*300|0)+'ms';
-    layer.appendChild(s);
-  }
-  setTimeout(()=>layer.remove(),1600);
-}
+// ------- Helpers -------
+const $ = (id) => document.getElementById(id);
+const pick = (arr) => arr[Math.floor(Math.random()*arr.length)];
+const shuffle = (a) => [...a].sort(()=>Math.random()-0.5);
+const prefersReduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+
 function loadWithFallback(imgEl, sources, onFail){
   if (!imgEl) return;
   const list = [...sources];
@@ -89,119 +60,115 @@ function loadWithFallback(imgEl, sources, onFail){
   next();
 }
 
-// ===== DOM Ready =====
+async function typeWriter(el, text, speed = 18){
+  if (!el) return;
+  if (prefersReduced()) { el.textContent = text; return; }
+  el.textContent = "";
+  for (let i=0;i<text.length;i++){
+    el.textContent += text[i];
+    // tiny random jitter for life
+    await new Promise(r=>setTimeout(r, speed + (i%7===0?4:0)));
+  }
+}
+
+function showToast(msg){
+  const t = $('toast'); if (!t) return;
+  t.textContent = msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'), 1500);
+}
+
+function confettiBurst(){
+  if (prefersReduced()) return;
+  const layer=document.createElement('div');
+  layer.style.position='fixed'; layer.style.left=0; layer.style.top=0;
+  layer.style.width='100%'; layer.style.height='0'; layer.style.overflow='visible'; layer.style.zIndex=60;
+  document.body.appendChild(layer);
+  const W=window.innerWidth;
+  for(let i=0;i<24;i++){
+    const s=document.createElement('span');
+    s.textContent=pick(CONFETTI);
+    s.style.position='absolute';
+    s.style.left=(Math.random()*W)+'px';
+    s.style.top='0';
+    s.style.fontSize=(16+Math.random()*14)+'px';
+    s.style.animation=`fall .9s ease-in forwards`;
+    s.style.opacity='.95';
+    layer.appendChild(s);
+  }
+  setTimeout(()=>layer.remove(), 1000);
+}
+
+// Small CSS for confetti animation (injected once)
+(function injectConfettiCSS(){
+  const css = `
+  @keyframes fall {
+    from { transform: translateY(-10px) rotate(0); }
+    to   { transform: translateY(120px) rotate(360deg); opacity: .2; }
+  }`;
+  const tag = document.createElement('style');
+  tag.textContent = css;
+  document.head.appendChild(tag);
+})();
+
+// Build a 2–3 sentence funny translation
+function buildTranslation({breed, count, pitch, urgency, squirrel, zoomies}){
+  const opener = pick(OPENERS);
+  const s1 = `Detected ${pick(COUNT_LINES[count])} ${pick(PITCH_LINES[pitch])} — ${pick(URGENCY_LINES[urgency])}.`;
+  const s2 = squirrel === 100
+    ? "Also: SQUIRREL CONFIRMED. All windows now officially ‘police stations.’"
+    : squirrel === 0
+      ? "No squirrels in sight, but I will maintain patrol purely for morale."
+      : "Squirrel probability medium; recommend cautious tail-wagging with rapid perimeter checks.";
+  const z = Number(zoomies || 0);
+  const zDesc = z >= 8 ? "Zoomies at tornado strength; sofa should update its will."
+            : z >= 5 ? "Zoomies at sustainable thrum; prepare hallway sprints."
+            : "Zoomies dormant; naps at maximum fluff.";
+  const breedTag = breed ? ` [${breed}]` : "";
+  return `${opener} ${s1} ${s2} ${zDesc}${breedTag}`;
+}
+
+// ------- App -------
 document.addEventListener('DOMContentLoaded', () => {
   // Elements
-  const replyEl = document.getElementById('reply');
-  const translateBtn = document.getElementById('translateBtn');
-  const copyBtn = document.getElementById('copyBtn');
-  const toastEl = document.getElementById('toast');
-  const barkGifEl = document.getElementById('barkGif');
-  const barkGifImg = document.getElementById('barkGifImg');
-  const zoomiesEl = document.getElementById('zoomies');
-  const zoomLabelEl = document.getElementById('zoomLabel');
-  const gifRail = document.getElementById('gifRail');
-  const gifToggle = document.getElementById('gifToggle');
-  const quipEl = document.getElementById('quip');
-  const bgBubble = document.getElementById('bgBubble');
-  const heroBubble = document.getElementById('heroBubble');
+  const bgBubble = $('bgBubble');
+  const heroBubble = $('heroBubble');
+  const heroGifs = $('heroGifs');
 
-  const segGroups = {
-    count: document.getElementById('countSeg'),
-    pitch: document.getElementById('pitchSeg'),
-    urgency: document.getElementById('urgencySeg'),
-    mood: document.getElementById('moodSeg'),
-    squirrel: document.getElementById('squirrelSeg'),
+  const translateBtn = $('translateBtn');
+  const copyBtn = $('copyBtn');
+  const replyEl = $('reply');
+  const barkGifImg = $('barkGifImg');
+  const quipEl = $('quip');
+
+  const zoomies = $('zoomies');
+  const zoomLabel = $('zoomLabel');
+
+  const segs = {
+    count: $('countSeg'),
+    pitch: $('pitchSeg'),
+    urgency: $('urgencySeg'),
+    squirrel: $('squirrelSeg')
   };
 
-  let lastPlainLine = "";
+  let lastText = "";
 
-  // Initial images w/ fallbacks
-  const BG_DOG_SOURCES = [
-    "/assets/bg-dog-cartoon.png",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Dog_cartoon.svg/512px-Dog_cartoon.svg.png",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Cartoon_Dog.svg/512px-Cartoon_Dog.svg.png"
-  ];
-  const HERO_SOURCES = [
-    "/assets/dog-bubble.png",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Husky_Walking.jpg/320px-Husky_Walking.jpg",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Golden_Retriever_medium-to-light-coat.jpg/320px-Golden_Retriever_medium-to-light-coat.jpg"
-  ];
-
-  loadWithFallback(document.getElementById('bgDog'), BG_DOG_SOURCES, () => {
-    const bg = document.querySelector('.bg-hero');
-    if (bg) bg.style.display = 'none';
-  });
-  loadWithFallback(document.getElementById('heroDog'), HERO_SOURCES, () => {
-    const heroImg = document.getElementById('heroDog');
-    if (heroImg) heroImg.style.display = 'none';
-  });
-
-  // Segmented groups (single select)
-  Object.values(segGroups).forEach(seg=>{
-    if (!seg) return;
-    seg.addEventListener('click', e=>{
-      if (e.target.tagName!=='BUTTON') return;
-      seg.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
-      e.target.classList.add('on');
-    });
-  });
-
-  // Randomize
-  const rndBtn = document.getElementById('randomizeWoof');
-  if (rndBtn) {
-    rndBtn.onclick = ()=>{
-      Object.values(segGroups).forEach(seg=>{
-        if (!seg) return;
-        const btns=Array.from(seg.querySelectorAll('button'));
-        if (!btns.length) return;
-        const r=btns[Math.floor(Math.random()*btns.length)];
-        btns.forEach(b=>b.classList.remove('on'));
-        r.classList.add('on');
-      });
-      const z=Math.floor(Math.random()*11);
-      if (zoomiesEl) {
-        zoomiesEl.value=z;
-        zoomLabelEl.textContent = zoomLabelText(z);
-      }
-    };
-  }
-
-  // Zoom label
-  zoomiesEl?.addEventListener('input',e=>{
-    zoomLabelEl.textContent = zoomLabelText(e.target.value);
-  });
-  if (zoomiesEl) zoomLabelEl.textContent = zoomLabelText(zoomiesEl.value);
-
-  // Copy
-  copyBtn?.addEventListener('click', async()=>{
-    if(!lastPlainLine){ showToast(toastEl,"Nothing to copy"); return; }
-    try{ await navigator.clipboard.writeText(lastPlainLine); showToast(toastEl,"Copied!"); }
-    catch{ showToast(toastEl,"Copy failed"); }
-  });
-
-  // GIF rail (sticky, compact, show 2)
-  function renderGifs(){
-    if(!gifRail) return;
-    if(gifToggle && !gifToggle.checked){ gifRail.innerHTML=""; return; }
-    const picks = shuffle(DOG_GIFS_SOURCES).slice(0, 2);
-    const CAPS = ["Explaining advanced Barkonomics.","Zoomies research in progress."];
-
-    gifRail.innerHTML = picks.map((arr,i)=>(
-      `<figure class="gif-card">
-         <img referrerpolicy="no-referrer" alt="Dog gif" />
-         <figcaption class="caption">${CAPS[i%CAPS.length]}</figcaption>
-       </figure>`
-    )).join("");
-
-    Array.from(gifRail.querySelectorAll('.gif-card')).forEach((card,i)=>{
-      const img=card.querySelector('img');
-      loadWithFallback(img, picks[i], ()=>{ card.classList.add('failed'); img.remove(); });
+  // Render hero GIFs (2 nice cards)
+  function renderHeroGifs(){
+    if (!heroGifs) return;
+    const picks = shuffle(HERO_GIFS).slice(0,2);
+    heroGifs.innerHTML = picks.map((pair,i)=>`
+      <figure class="gif-card">
+        <img alt="Dog gif ${i+1}" />
+        <figcaption class="caption">${i===0 ? "Explaining Barkonomics" : "Consulting Professor Ben"}</figcaption>
+      </figure>
+    `).join("");
+    Array.from(heroGifs.querySelectorAll('img')).forEach((img,i)=>{
+      loadWithFallback(img, picks[i], ()=> img.remove());
     });
   }
-  gifToggle?.addEventListener('change', renderGifs);
+  renderHeroGifs();
 
-  // Rotate small hero bubble
+  // Nice rotating micro-copy
   setInterval(()=>{
     if (!heroBubble) return;
     heroBubble.textContent = pick([
@@ -209,78 +176,81 @@ document.addEventListener('DOMContentLoaded', () => {
       "Fluent in Treatish.",
       "Certified Good Dog™ interpreter.",
       "Now decoding tail-wags…",
-      "Woof to text engaged."
+      "Woof-to-text engaged."
     ]);
   }, 3500);
 
-  // Background bubble rotation
-  const BUBBLE_LINES = [
+  // Background footer bubble cycles too
+  const FOOT_LINES = [
     "Woof means hello!",
     "Arf arf = snacks now.",
-    "Bork bork → intruder alert!",
     "Zoomies are my cardio.",
-    "Translation: I run this house.",
-    "Tail wag = 100% approval.",
-    "Sniff sniff... data collected."
+    "Translation: I run this house."
   ];
-  let bubbleIndex=0, bubbleTimer=null, resumeTimer=null;
+  let footIdx = 0;
+  setInterval(()=>{
+    if (!bgBubble) return;
+    footIdx = (footIdx+1)%FOOT_LINES.length;
+    bgBubble.textContent = FOOT_LINES[footIdx];
+  }, 4200);
 
-  function fadeSwap(el, text, dur=300){
-    if (!el) return;
-    el.style.transition='opacity '+dur+'ms ease';
-    el.style.opacity='0';
-    setTimeout(()=>{ el.textContent=text; el.style.opacity='1'; }, dur);
-  }
-  function startBubbleRotation(){
-    stopBubbleRotation();
-    bubbleTimer=setInterval(()=>{
-      bubbleIndex=(bubbleIndex+1)%BUBBLE_LINES.length;
-      fadeSwap(bgBubble, BUBBLE_LINES[bubbleIndex]);
-    }, 4000);
-  }
-  function stopBubbleRotation(){ if(bubbleTimer){ clearInterval(bubbleTimer); bubbleTimer=null; } }
-  function setBgBubble(text, holdMs=8000){
-    stopBubbleRotation();
-    fadeSwap(bgBubble, text);
-    if(resumeTimer) clearTimeout(resumeTimer);
-    resumeTimer=setTimeout(()=>startBubbleRotation(), holdMs);
-  }
-  startBubbleRotation();
+  // Segmented controls (single-select)
+  Object.values(segs).forEach(seg=>{
+    if (!seg) return;
+    seg.addEventListener('click', e=>{
+      if (e.target.tagName !== 'BUTTON') return;
+      seg.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+      e.target.classList.add('on');
+    });
+  });
 
-  // Translate (no API)
-  const readSegVal = (segId, fallback)=> document.querySelector(`#${segId} .on`)?.dataset.val ?? fallback;
-  const squirrelEasterEgg = ()=> "SQUIRREL ALERT. All systems redirect to window patrol. If lost, follow the chaos trail.";
-  const tornadoEasterEgg = ()=> "Zoomies at DEFCON 1. Sofa, it’s not you—it’s me. BRB in a blur.";
+  // Zoomies label
+  const zLabel = (v)=>{
+    const n=Number(v);
+    const bucket = n<=2 ? "Couch potato" : n<=6 ? "Wigglebutt" : "Tornado";
+    zoomLabel.textContent = `${n} · ${bucket}`;
+  };
+  zoomies.addEventListener('input', e=> zLabel(e.target.value));
+  zLabel(zoomies.value);
 
-  async function doTranslate(){
-    const squirrel = Number(readSegVal('squirrelSeg','50'));
-    const zoomies = Number(zoomiesEl?.value ?? 5);
+  // Randomize
+  $('randomizeWoof').addEventListener('click', ()=>{
+    Object.values(segs).forEach(seg=>{
+      if (!seg) return;
+      const btns = seg.querySelectorAll('button');
+      const r = btns[Math.floor(Math.random()*btns.length)];
+      btns.forEach(b=>b.classList.remove('on'));
+      r.classList.add('on');
+    });
+    const z = Math.floor(Math.random()*11);
+    zoomies.value = z; zLabel(z);
+  });
 
-    let line;
-    if (squirrel === 100) line = squirrelEasterEgg();
-    else if (zoomies >= 10) line = tornadoEasterEgg();
-    else line = pick(BARK_LINES);
+  // Translate
+  translateBtn.addEventListener('click', async ()=>{
+    const breed = $('breed').value;
+    const count = segs.count.querySelector('.on')?.dataset.val || 'two';
+    const pitch = segs.pitch.querySelector('.on')?.dataset.val || 'mid';
+    const urgency = segs.urgency.querySelector('.on')?.dataset.val || 'chill';
+    const squirrel = Number(segs.squirrel.querySelector('.on')?.dataset.val || 50);
+    const z = Number(zoomies.value || 5);
 
-    lastPlainLine = line;
+    const text = buildTranslation({breed, count, pitch, urgency, squirrel, zoomies: z});
+    lastText = text;
 
-    loadWithFallback(barkGifImg, BARK_SOURCES, ()=> barkGifEl && (barkGifEl.style.display='none'));
-    barkGifEl?.classList.add('on');
+    // Barking GIF visible while "typing"
+    loadWithFallback(barkGifImg, BARK_GIF_SOURCES);
 
-    replyEl?.classList.remove('new'); void replyEl?.offsetWidth; replyEl?.classList.add('new');
-    if (replyEl) {
-      await typeWriter(replyEl, line, 40);
-      replyEl.innerHTML = decorate(replyEl.textContent);
-    }
-
-    setBgBubble(lastPlainLine);
-
-    if (Math.random() < 0.35) popConfetti(28);
+    // Type, then confetti + quip
+    await typeWriter(replyEl, text, 12);
+    if (Math.random() < 0.45) confettiBurst();
     if (quipEl) quipEl.textContent = pick(QUIPS);
-  }
+  });
 
-  translateBtn?.addEventListener('click', doTranslate);
-
-  // Initial render
-  renderGifs();
-  if (quipEl) quipEl.textContent = pick(QUIPS);
+  // Copy
+  copyBtn.addEventListener('click', async ()=>{
+    if (!lastText) return showToast("Nothing to copy");
+    try { await navigator.clipboard.writeText(lastText); showToast("Copied!"); }
+    catch { showToast("Copy failed"); }
+  });
 });
